@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElAhmad TV</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#000;
+  font-family:Arial, sans-serif;
+  direction:rtl;
+}
+
+/* Header */
+.header{
+  background:#c62828;
+  color:#fff;
+  padding:14px;
+  font-size:18px;
+  font-weight:bold;
+  text-align:center;
+}
+
+/* Player */
+.player-wrap{
+  background:#000;
+}
+video{
+  width:100%;
+  max-height:55vh;
+  background:#000;
+}
+
+/* Status */
+.status{
+  padding:10px;
+  font-size:14px;
+  color:#ccc;
+  background:#111;
+}
+
+/* Channels */
+.list{
+  margin-top:6px;
+}
+.channel{
+  padding:14px;
+  background:#111;
+  color:#fff;
+  border-bottom:1px solid #222;
+  cursor:pointer;
+}
+.channel:hover{
+  background:#222;
+}
+.channel:active{
+  background:#333;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">ElAhmad TV</div>
+
+<div class="player-wrap">
+  <video id="player" controls playsinline></video>
+</div>
+
+<div class="status" id="status">جاري تحميل القنوات...</div>
+<div class="list" id="list"></div>
+
+<script>
+/* رابط ملف القنوات */
+const CHANNELS_URL =
+"https://ahmedusername.github.io/elahmad-tv/channels.json";
+
+const video   = document.getElementById("player");
+const list    = document.getElementById("list");
+const statusE = document.getElementById("status");
+
+/* تحميل القنوات */
+fetch(CHANNELS_URL)
+.then(res=>{
+  if(!res.ok) throw new Error("HTTP Error");
+  return res.json();
+})
+.then(data=>{
+  if(!data.channels || data.channels.length === 0){
+    statusE.textContent = "لا توجد قنوات";
+    return;
+  }
+
+  statusE.textContent = "اختر قناة للتشغيل";
+
+  data.channels.forEach((ch,index)=>{
+    const div = document.createElement("div");
+    div.className = "channel";
+    div.textContent = ch.name || ("Channel " + (index+1));
+
+    div.onclick = ()=>{
+      statusE.textContent = "جاري تشغيل: " + ch.name;
+      video.src = ch.stream;
+      video.load();
+      video.play().catch(()=>{
+        statusE.textContent = "فشل تشغيل القناة";
+      });
+    };
+
+    list.appendChild(div);
+  });
+})
+.catch(err=>{
+  console.error(err);
+  statusE.textContent = "خطأ في تحميل ملف القنوات";
+});
+
+/* أخطاء المشغّل */
+video.addEventListener("error", ()=>{
+  statusE.textContent = "خطأ في البث (الرابط قد يكون محمي)";
+});
+
+video.addEventListener("playing", ()=>{
+  statusE.textContent = "تشغيل ✔";
+});
+</script>
+
+</body>
+</html>
