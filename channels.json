@@ -2,18 +2,18 @@
   "channels": [
     {
       "name": "beIN Sports 1 HD",
-      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-      "logo": "https://cdn.imgbin.com/15/25/22/imgbin-bein-sports-1-logo-bein-box-office-bein-media-group-tv-station-gqr9SiDSBNUrwSzL9ANrScw1u.jpg"
+      "stream": "https://live.alarabiya.net/alarabiapublish/alhadath.smil/alarabiapublish/alhadath_1080p/chunks.m3u8",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/6/6c/1-HD.png"
     },
     {
       "name": "beIN Sports 2 HD",
-      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-      "logo": "https://banner2.cleanpng.com/20180601/isq/avogjl4az.webp"
+      "stream": "https://svs.itworkscdn.net/alarabiyalive/alarabiyahd.smil/playlist.m3u8",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/5/51/2-HD.png"
     },
     {
       "name": "beIN Sports 3 HD",
-      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-      "logo": "https://banner2.cleanpng.com/20180616/gqu/aa7xspgzp.webp"
+      "stream": "https://live-hls-web-aja-gcp.thehlive.com/AJA/01.m3u8",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/f/fe/3-HD.png"
     }
   ]
 }
