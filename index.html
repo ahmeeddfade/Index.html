@@ -2,46 +2,82 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
 <style>
+*{box-sizing:border-box}
 body{
   margin:0;
   background:#000;
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   direction:rtl;
   color:#fff;
 }
+
+/* Header */
 .header{
   background:#c62828;
   padding:14px;
-  text-align:center;
   font-size:18px;
   font-weight:bold;
+  text-align:center;
+}
+
+/* Player */
+.player-wrap{
+  background:#000;
 }
 video{
   width:100%;
   max-height:55vh;
   background:#000;
 }
+
+/* Status */
 .status{
   padding:10px;
   font-size:14px;
-  color:#aaa;
+  color:#ccc;
+  background:#111;
 }
-.channel{
-  padding:14px;
-  border-bottom:1px solid #222;
+
+/* Channels Grid */
+.channels{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:10px;
+}
+
+.card{
+  background:#111;
+  border-radius:8px;
+  overflow:hidden;
   cursor:pointer;
+  text-align:center;
+  transition:0.2s;
 }
-.channel:hover{
-  background:#222;
+
+.card:hover{
+  background:#1a1a1a;
 }
-.active{
-  background:#1e88e5;
+
+.card.active{
+  outline:2px solid #c62828;
+}
+
+.card img{
+  width:100%;
+  height:90px;
+  object-fit:contain;
+  background:#000;
+}
+
+.card span{
+  display:block;
+  padding:8px;
+  font-size:14px;
 }
 </style>
 </head>
@@ -50,64 +86,81 @@ video{
 
 <div class="header">ElAhmad TV</div>
 
-<video id="video" controls playsinline></video>
-<div class="status" id="status">اختر قناة للتشغيل</div>
+<div class="player-wrap">
+  <video id="player" controls playsinline></video>
+</div>
 
-<div id="channels"></div>
+<div class="status" id="status">جاري تحميل القنوات...</div>
+<div class="channels" id="channels"></div>
 
 <script>
-const video = document.getElementById("video");
-const list  = document.getElementById("channels");
-const status= document.getElementById("status");
-let hls;
+/* رابط ملف القنوات */
+const CHANNELS_URL = "channels.json";
 
+const video   = document.getElementById("player");
+const list    = document.getElementById("channels");
+const statusE = document.getElementById("status");
+
+/* تشغيل البث */
 function playStream(url){
-  status.textContent = "جاري التحميل...";
-  
-  if(hls){
-    hls.destroy();
-  }
-
-  if(Hls.isSupported()){
-    hls = new Hls({
-      maxBufferLength: 30,
-      enableWorker: true
-    });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play();
-      status.textContent = "يعمل الآن";
-    });
-    hls.on(Hls.Events.ERROR, () => {
-      status.textContent = "حدث خطأ – إعادة المحاولة...";
-    });
-  } else if(video.canPlayType('application/vnd.apple.mpegurl')){
-    video.src = url;
-    video.play();
-    status.textContent = "يعمل الآن";
-  } else {
-    status.textContent = "الجهاز لا يدعم هذا البث";
-  }
+  video.src = url;
+  video.load();
+  video.play().catch(()=>{
+    statusE.textContent = "فشل تشغيل القناة";
+  });
 }
 
-fetch("channels.json")
-.then(r=>r.json())
+/* تحميل القنوات */
+fetch(CHANNELS_URL)
+.then(res=>{
+  if(!res.ok) throw new Error("HTTP Error");
+  return res.json();
+})
 .then(data=>{
+  if(!data.channels || data.channels.length === 0){
+    statusE.textContent = "لا توجد قنوات";
+    return;
+  }
+
+  statusE.textContent = "اختر قناة للتشغيل";
+
   data.channels.forEach(ch=>{
-    const div=document.createElement("div");
-    div.className="channel";
-    div.textContent=ch.name;
-    div.onclick=()=>{
-      document.querySelectorAll(".channel").forEach(c=>c.classList.remove("active"));
-      div.classList.add("active");
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const img = document.createElement("img");
+    img.src = ch.logo || "https://via.placeholder.com/300x150?text=TV";
+
+    const name = document.createElement("span");
+    name.textContent = ch.name;
+
+    card.appendChild(img);
+    card.appendChild(name);
+
+    card.onclick = ()=>{
+      document.querySelectorAll(".card")
+        .forEach(c=>c.classList.remove("active"));
+
+      card.classList.add("active");
+      statusE.textContent = "جاري تشغيل: " + ch.name;
       playStream(ch.stream);
     };
-    list.appendChild(div);
+
+    list.appendChild(card);
   });
 })
-.catch(()=>{
-  status.textContent="فشل تحميل ملف القنوات";
+.catch(err=>{
+  console.error(err);
+  statusE.textContent = "خطأ في تحميل ملف القنوات";
+});
+
+/* أحداث المشغّل */
+video.addEventListener("playing", ()=>{
+  statusE.textContent = "يعمل الآن ✔";
+});
+
+video.addEventListener("error", ()=>{
+  statusE.textContent = "خطأ في البث (قد يكون الرابط محمي)";
 });
 </script>
 
