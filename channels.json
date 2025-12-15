@@ -1,8 +1,19 @@
 {
   "channels": [
     {
-      "name": "قناة اختبار",
-      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+      "name": "beIN Sports 1 HD",
+      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "logo": "https://cdn.imgbin.com/15/25/22/imgbin-bein-sports-1-logo-bein-box-office-bein-media-group-tv-station-gqr9SiDSBNUrwSzL9ANrScw1u.jpg"
+    },
+    {
+      "name": "beIN Sports 2 HD",
+      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "logo": "https://banner2.cleanpng.com/20180601/isq/avogjl4az.webp"
+    },
+    {
+      "name": "beIN Sports 3 HD",
+      "stream": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+      "logo": "https://banner2.cleanpng.com/20180616/gqu/aa7xspgzp.webp"
     }
   ]
 }
