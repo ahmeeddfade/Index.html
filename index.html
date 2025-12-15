@@ -29,6 +29,7 @@ body{
 
 /* Player */
 .player-wrap{
+  position:relative;
   background:#000;
 }
 video{
@@ -39,6 +40,20 @@ video{
 }
 video.loading{
   opacity:.4;
+}
+
+/* Loader */
+.loader{
+  display:none;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  color:#ff7043;
+  font-size:15px;
+  background:rgba(0,0,0,.6);
+  padding:8px 14px;
+  border-radius:20px;
 }
 
 /* Status */
@@ -60,11 +75,11 @@ video.loading{
 /* Channel Card */
 .card{
   background:#111;
-  border-radius:10px;
+  border-radius:12px;
   overflow:hidden;
   cursor:pointer;
   text-align:center;
-  transition:.2s;
+  transition:.25s ease;
 }
 
 .card:hover{
@@ -75,7 +90,7 @@ video.loading{
 .card.active{
   box-shadow:
     0 0 0 2px #ff7043,
-    0 0 18px rgba(255,112,67,.35);
+    0 0 25px rgba(255,112,67,.35);
   background:#1b1b1b;
 }
 
@@ -84,6 +99,10 @@ video.loading{
   height:90px;
   object-fit:contain;
   background:#000;
+  filter:brightness(.9);
+}
+.card:hover img{
+  filter:brightness(1);
 }
 
 .card span{
@@ -100,6 +119,7 @@ video.loading{
 
 <div class="player-wrap">
   <video id="player" controls playsinline></video>
+  <div class="loader" id="loader">جاري التحميل...</div>
 </div>
 
 <div class="status" id="status">جاري تحميل القنوات...</div>
@@ -112,13 +132,17 @@ const CHANNELS_URL = "channels.json";
 const video   = document.getElementById("player");
 const list    = document.getElementById("channels");
 const statusE = document.getElementById("status");
+const loader  = document.getElementById("loader");
 
 let hls = null;
 
 /* تشغيل البث – احترافي */
 function playStream(url){
   statusE.textContent = "جاري فتح القناة...";
+  loader.style.display="block";
   video.classList.add("loading");
+
+  localStorage.setItem("lastChannel", url);
 
   if(hls){
     hls.destroy();
@@ -140,7 +164,8 @@ function playStream(url){
 
     hls.on(Hls.Events.ERROR,(e,data)=>{
       if(data.fatal){
-        statusE.textContent = "خطأ في البث";
+        statusE.textContent = "⚠️ البث غير متاح حالياً";
+        loader.style.display="none";
       }
     });
 
@@ -149,15 +174,13 @@ function playStream(url){
     video.play();
   }else{
     statusE.textContent = "المتصفح لا يدعم البث";
+    loader.style.display="none";
   }
 }
 
 /* تحميل القنوات */
 fetch(CHANNELS_URL)
-.then(res=>{
-  if(!res.ok) throw new Error("HTTP Error");
-  return res.json();
-})
+.then(res=>res.json())
 .then(data=>{
   if(!data.channels || data.channels.length===0){
     statusE.textContent = "لا توجد قنوات";
@@ -166,7 +189,9 @@ fetch(CHANNELS_URL)
 
   statusE.textContent = "اختر قناة للتشغيل";
 
-  data.channels.forEach(ch=>{
+  const lastChannel = localStorage.getItem("lastChannel");
+
+  data.channels.forEach((ch,index)=>{
     const card = document.createElement("div");
     card.className = "card";
 
@@ -184,11 +209,21 @@ fetch(CHANNELS_URL)
         .forEach(c=>c.classList.remove("active"));
 
       card.classList.add("active");
-      statusE.textContent = "جاري تشغيل: " + ch.name;
       playStream(ch.stream);
     };
 
     list.appendChild(card);
+
+    /* تشغيل تلقائي */
+    if(
+      (lastChannel && ch.stream === lastChannel) ||
+      (!lastChannel && index === 0)
+    ){
+      setTimeout(()=>{
+        card.classList.add("active");
+        playStream(ch.stream);
+      },300);
+    }
   });
 })
 .catch(()=>{
@@ -197,12 +232,14 @@ fetch(CHANNELS_URL)
 
 /* أحداث المشغل */
 video.addEventListener("playing", ()=>{
+  loader.style.display="none";
   video.classList.remove("loading");
   statusE.textContent = "يعمل الآن ✔";
 });
 
 video.addEventListener("error", ()=>{
-  statusE.textContent = "خطأ في البث (قد يكون الرابط محمي)";
+  loader.style.display="none";
+  statusE.textContent = "خطأ في البث";
 });
 </script>
 
