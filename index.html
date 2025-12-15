@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
+<!-- hls.js -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
 <style>
 *{box-sizing:border-box}
 body{
@@ -32,6 +35,10 @@ video{
   width:100%;
   max-height:55vh;
   background:#000;
+  transition:opacity .25s ease;
+}
+video.loading{
+  opacity:.4;
 }
 
 /* Status */
@@ -50,21 +57,26 @@ video{
   padding:10px;
 }
 
+/* Channel Card */
 .card{
   background:#111;
-  border-radius:8px;
+  border-radius:10px;
   overflow:hidden;
   cursor:pointer;
   text-align:center;
-  transition:0.2s;
+  transition:.2s;
 }
 
 .card:hover{
   background:#1a1a1a;
 }
 
+/* Eye-comfort active frame */
 .card.active{
-  outline:2px solid #c62828;
+  box-shadow:
+    0 0 0 2px #ff7043,
+    0 0 18px rgba(255,112,67,.35);
+  background:#1b1b1b;
 }
 
 .card img{
@@ -94,20 +106,50 @@ video{
 <div class="channels" id="channels"></div>
 
 <script>
-/* رابط ملف القنوات */
+/* ملف القنوات */
 const CHANNELS_URL = "channels.json";
 
 const video   = document.getElementById("player");
 const list    = document.getElementById("channels");
 const statusE = document.getElementById("status");
 
-/* تشغيل البث */
+let hls = null;
+
+/* تشغيل البث – احترافي */
 function playStream(url){
-  video.src = url;
-  video.load();
-  video.play().catch(()=>{
-    statusE.textContent = "فشل تشغيل القناة";
-  });
+  statusE.textContent = "جاري فتح القناة...";
+  video.classList.add("loading");
+
+  if(hls){
+    hls.destroy();
+    hls = null;
+  }
+
+  if(Hls.isSupported()){
+    hls = new Hls({
+      lowLatencyMode:true,
+      backBufferLength:90
+    });
+
+    hls.loadSource(url);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, ()=>{
+      video.play();
+    });
+
+    hls.on(Hls.Events.ERROR,(e,data)=>{
+      if(data.fatal){
+        statusE.textContent = "خطأ في البث";
+      }
+    });
+
+  }else if(video.canPlayType("application/vnd.apple.mpegurl")){
+    video.src = url;
+    video.play();
+  }else{
+    statusE.textContent = "المتصفح لا يدعم البث";
+  }
 }
 
 /* تحميل القنوات */
@@ -117,7 +159,7 @@ fetch(CHANNELS_URL)
   return res.json();
 })
 .then(data=>{
-  if(!data.channels || data.channels.length === 0){
+  if(!data.channels || data.channels.length===0){
     statusE.textContent = "لا توجد قنوات";
     return;
   }
@@ -149,13 +191,13 @@ fetch(CHANNELS_URL)
     list.appendChild(card);
   });
 })
-.catch(err=>{
-  console.error(err);
+.catch(()=>{
   statusE.textContent = "خطأ في تحميل ملف القنوات";
 });
 
-/* أحداث المشغّل */
+/* أحداث المشغل */
 video.addEventListener("playing", ()=>{
+  video.classList.remove("loading");
   statusE.textContent = "يعمل الآن ✔";
 });
 
