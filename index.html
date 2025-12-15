@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
-<!-- hls.js -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
@@ -17,8 +16,6 @@ body{
   direction:rtl;
   color:#fff;
 }
-
-/* Header */
 .header{
   background:#c62828;
   padding:14px;
@@ -26,99 +23,61 @@ body{
   font-weight:bold;
   text-align:center;
 }
-
-/* Player */
 .player-wrap{
   position:relative;
-  background:#000;
 }
 video{
   width:100%;
   max-height:55vh;
   background:#000;
-  transition:opacity .25s ease;
+  transition:.25s;
 }
-video.loading{opacity:.45}
+video.loading{opacity:.4}
 
-/* Loader */
 .loader{
   display:none;
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  color:#ff7043;
-  font-size:14px;
-  background:rgba(0,0,0,.65);
-  padding:8px 14px;
-  border-radius:20px;
-}
-
-/* Controls */
-.player-controls{
-  background:#0d0d0d;
-  padding:6px;
-  text-align:center;
-}
-#fsBtn{
-  background:#c62828;
-  color:#fff;
-  border:none;
+  background:rgba(0,0,0,.7);
   padding:8px 16px;
-  font-size:14px;
-  border-radius:6px;
-  cursor:pointer;
+  border-radius:20px;
+  color:#ff7043;
 }
-#fsBtn:active{background:#b71c1c}
 
-/* Status */
 .status{
   padding:10px;
   font-size:14px;
-  color:#ccc;
   background:#111;
+  color:#ccc;
 }
 
-/* Channels Grid */
 .channels{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:10px;
   padding:10px;
 }
-
-/* Channel Card */
 .card{
   background:#111;
   border-radius:12px;
-  overflow:hidden;
-  cursor:pointer;
   text-align:center;
-  transition:.25s ease;
+  cursor:pointer;
+  transition:.25s;
 }
 .card:hover{background:#1a1a1a}
-
-/* Eye-comfort active frame */
 .card.active{
-  box-shadow:
-    0 0 0 2px #ff7043,
-    0 0 22px rgba(255,112,67,.35);
-  background:#1b1b1b;
+  box-shadow:0 0 0 2px #ff7043,0 0 20px rgba(255,112,67,.35);
 }
-
 .card img{
   width:100%;
   height:90px;
   object-fit:contain;
-  background:#000;
-  filter:brightness(.9);
 }
-.card:hover img{filter:brightness(1)}
-
 .card span{
   display:block;
   padding:8px;
-  font-size:14px;
 }
 </style>
 </head>
@@ -128,132 +87,77 @@ video.loading{opacity:.45}
 <div class="header">ElAhmad TV</div>
 
 <div class="player-wrap">
-  <video id="player" controls playsinline preload="auto"></video>
+  <video id="player" controls playsinline></video>
   <div class="loader" id="loader">جاري التحميل...</div>
-</div>
-
-<div class="player-controls">
-  <button id="fsBtn">⛶ ملء الشاشة</button>
 </div>
 
 <div class="status" id="status">جاري تحميل القنوات...</div>
 <div class="channels" id="channels"></div>
 
 <script>
-/* 🔐 قفل الدومين */
-if(location.hostname !== "ddfade.github.io"){
-  document.body.innerHTML = "🚫 غير مصرح";
-  throw new Error("Blocked");
-}
-
-/* 🛡️ خريطة الروابط (إخفاء) */
-const STREAM_MAP = {
-  b1: "PUT_REAL_M3U8_LINK_1",
-  b2: "PUT_REAL_M3U8_LINK_2",
-  b3: "PUT_REAL_M3U8_LINK_3"
-};
-
-/* ملف القنوات */
 const CHANNELS_URL = "channels.json";
 
-const video   = document.getElementById("player");
-const list    = document.getElementById("channels");
+const video = document.getElementById("player");
+const list = document.getElementById("channels");
 const statusE = document.getElementById("status");
-const loader  = document.getElementById("loader");
-const fsBtn   = document.getElementById("fsBtn");
+const loader = document.getElementById("loader");
 
 let hls = null;
 
-/* ⛶ ملء الشاشة الذكي */
-fsBtn.onclick = ()=>{
-  if(video.requestFullscreen){
-    video.requestFullscreen();
-  }else if(video.webkitEnterFullscreen){
-    video.webkitEnterFullscreen(); // iOS
-  }
-};
-
-/* ▶️ تشغيل احترافي سريع */
-function playStream(key){
-  const url = STREAM_MAP[key];
-  if(!url){ statusE.textContent="رابط غير متاح"; return; }
-
-  statusE.textContent = "جاري فتح القناة...";
+function playStream(url){
   loader.style.display="block";
   video.classList.add("loading");
-
-  localStorage.setItem("lastChannel", key);
+  statusE.textContent="جاري فتح القناة...";
 
   if(hls){ hls.destroy(); hls=null; }
 
   if(Hls.isSupported()){
     hls = new Hls({
       lowLatencyMode:true,
-      backBufferLength:60,
-      maxBufferLength:30,
-      enableWorker:true
+      backBufferLength:60
     });
     hls.loadSource(url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play());
-    hls.on(Hls.Events.ERROR,(e,d)=>{
-      if(d.fatal){
-        statusE.textContent="⚠️ البث غير متاح حالياً";
-        loader.style.display="none";
-      }
-    });
-  }else if(video.canPlayType("application/vnd.apple.mpegurl")){
-    video.src=url; video.play();
   }else{
-    statusE.textContent="المتصفح لا يدعم البث";
-    loader.style.display="none";
+    video.src=url;
+    video.play();
   }
 }
 
-/* تحميل القنوات */
 fetch(CHANNELS_URL)
 .then(r=>r.json())
 .then(data=>{
-  if(!data.channels?.length){
-    statusE.textContent="لا توجد قنوات"; return;
-  }
   statusE.textContent="اختر قناة للتشغيل";
-  const last = localStorage.getItem("lastChannel");
 
   data.channels.forEach((ch,i)=>{
     const card=document.createElement("div");
     card.className="card";
 
-    const img=document.createElement("img");
-    img.src=ch.logo || "https://via.placeholder.com/300x150?text=TV";
+    card.innerHTML=`
+      <img src="${ch.logo}">
+      <span>${ch.name}</span>
+    `;
 
-    const name=document.createElement("span");
-    name.textContent=ch.name;
-
-    card.append(img,name);
     card.onclick=()=>{
       document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
       card.classList.add("active");
       playStream(ch.stream);
     };
+
     list.appendChild(card);
 
-    if((last && ch.stream===last) || (!last && i===0)){
-      setTimeout(()=>{ card.classList.add("active"); playStream(ch.stream); },300);
+    if(i===0){
+      card.classList.add("active");
+      playStream(ch.stream);
     }
   });
-})
-.catch(()=>statusE.textContent="خطأ في تحميل ملف القنوات");
+});
 
-/* أحداث */
 video.addEventListener("playing", ()=>{
   loader.style.display="none";
   video.classList.remove("loading");
   statusE.textContent="يعمل الآن ✔";
-});
-video.addEventListener("error", ()=>{
-  loader.style.display="none";
-  statusE.textContent="خطأ في البث";
 });
 </script>
 
