@@ -2,178 +2,155 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#000;
-  font-family:Arial, sans-serif;
-  direction:rtl;
-  color:#fff;
-  overflow:hidden;
+/* ====== RESET ====== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Header */
-.header{
-  background:#c62828;
-  padding:12px;
-  font-size:18px;
-  font-weight:bold;
-  text-align:center;
+body {
+  background: black;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 
-/* Player */
-.player-wrap{
-  position:relative;
-  background:#000;
-}
-video{
-  width:100%;
-  height:55vh;
-  background:#000;
+/* ====== VIDEO ====== */
+#video {
+  width: 100vw;
+  height: 100vh;
+  background: black;
 }
 
-/* Loader */
-.loader{
-  display:none;
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  align-items:center;
-  justify-content:center;
-  font-size:16px;
-  color:#ff7043;
+/* ====== OVERLAY CHANNELS ====== */
+#overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 30px;
+  background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+  display: flex;
+  gap: 20px;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-/* Status */
-.status{
-  padding:8px;
-  font-size:14px;
-  background:#111;
-  color:#ccc;
+#overlay.show {
+  opacity: 1;
 }
 
-/* Channels */
-.channels{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:14px;
-  padding:14px;
+/* ====== CHANNEL CARD ====== */
+.channel {
+  width: 180px;
+  height: 110px;
+  background: #111;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  transition: transform 0.2s, border 0.2s;
 }
 
-/* Card */
-.card{
-  background:#111;
-  border-radius:14px;
-  text-align:center;
-  cursor:pointer;
-  transition:.2s;
-  outline:none;
-}
-.card:hover,
-.card:focus,
-.card.active{
-  box-shadow:0 0 0 3px #ff7043;
-  transform:scale(1.05);
-  background:#1a1a1a;
+.channel img {
+  width: 80px;
+  margin-bottom: 8px;
 }
 
-.card img{
-  width:100%;
-  height:90px;
-  object-fit:contain;
-  background:#000;
-}
-.card span{
-  display:block;
-  padding:8px;
-  font-size:14px;
+.channel.active {
+  border: 3px solid #ff7a00;
+  transform: scale(1.1);
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">ElAhmad TV</div>
+<video id="video" autoplay controls></video>
 
-<div class="player-wrap">
-  <video id="player" controls playsinline></video>
-  <div class="loader" id="loader">جاري التحميل...</div>
-</div>
-
-<div class="status" id="status">اختر قناة للتشغيل</div>
-<div class="channels" id="channels"></div>
+<div id="overlay"></div>
 
 <script>
-const CHANNELS_URL = "channels.json";
-const video  = document.getElementById("player");
-const list   = document.getElementById("channels");
-const status = document.getElementById("status");
-const loader = document.getElementById("loader");
+const video = document.getElementById("video");
+const overlay = document.getElementById("overlay");
 
-let hls=null;
+let channels = [];
+let index = 0;
+let hideTimer;
 
-/* تشغيل البث */
-function playStream(url){
-  status.textContent="جاري فتح القناة...";
-  loader.style.display="flex";
+/* ====== LOAD CHANNELS ====== */
+fetch("channels.json")
+  .then(res => res.json())
+  .then(data => {
+    channels = data.channels;
+    renderChannels();
+    playChannel(0);
+  });
 
-  if(hls){ hls.destroy(); hls=null; }
-
-  if(Hls.isSupported()){
-    hls=new Hls({lowLatencyMode:true});
-    hls.loadSource(url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play());
-  }else{
-    video.src=url;
-    video.play();
-  }
+function renderChannels() {
+  overlay.innerHTML = "";
+  channels.forEach((ch, i) => {
+    const div = document.createElement("div");
+    div.className = "channel" + (i === index ? " active" : "");
+    div.innerHTML = `
+      <img src="${ch.logo}">
+      <div>${ch.name}</div>
+    `;
+    overlay.appendChild(div);
+  });
 }
 
-/* تحميل القنوات */
-fetch(CHANNELS_URL)
-.then(r=>r.json())
-.then(data=>{
-  data.channels.forEach((ch,i)=>{
-    const c=document.createElement("div");
-    c.className="card";
-    c.tabIndex=0;
+/* ====== PLAY ====== */
+function playChannel(i) {
+  index = i;
+  const url = channels[i].url;
 
-    c.innerHTML=`
-      <img src="${ch.logo}">
-      <span>${ch.name}</span>
-    `;
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  } else {
+    video.src = url;
+  }
 
-    c.onclick=()=>{
-      document.querySelectorAll(".card").forEach(x=>x.classList.remove("active"));
-      c.classList.add("active");
-      playStream(ch.stream);
-    };
+  renderChannels();
+}
 
-    list.appendChild(c);
+/* ====== REMOTE CONTROL ====== */
+document.addEventListener("keydown", e => {
+  showOverlay();
 
-    if(i===0){
-      setTimeout(()=>c.click(),400);
-    }
-  });
+  if (e.key === "ArrowRight") {
+    index = (index + 1) % channels.length;
+    renderChannels();
+  }
+
+  if (e.key === "ArrowLeft") {
+    index = (index - 1 + channels.length) % channels.length;
+    renderChannels();
+  }
+
+  if (e.key === "Enter") {
+    playChannel(index);
+  }
 });
 
-/* أحداث */
-video.addEventListener("playing",()=>{
-  loader.style.display="none";
-  status.textContent="يعمل الآن ✔";
-});
-video.addEventListener("error",()=>{
-  loader.style.display="none";
-  status.textContent="خطأ في البث";
-});
+function showOverlay() {
+  overlay.classList.add("show");
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    overlay.classList.remove("show");
+  }, 5000);
+}
 </script>
 
 </body>
-  </html>
+</html>
