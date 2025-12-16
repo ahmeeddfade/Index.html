@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -19,25 +19,25 @@ html,body{
   color:#fff;
 }
 
-/* ===== VIDEO FULLSCREEN ===== */
+/* ===== Video ===== */
 video{
   position:fixed;
   inset:0;
   width:100%;
   height:100%;
-  object-fit:cover;
+  object-fit:contain; /* ✅ مهم للتلفاز */
   background:#000;
 }
 
-/* ===== OVERLAY ===== */
+/* ===== Overlay ===== */
 .overlay{
   position:fixed;
-  inset:0;
-  display:flex;
-  align-items:flex-end;
-  background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.15),transparent);
-  padding:40px;
-  transition:.35s;
+  bottom:0;
+  left:0;
+  width:100%;
+  padding:28px 40px;
+  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+  transition:.3s;
 }
 
 .overlay.hide{
@@ -45,17 +45,18 @@ video{
   pointer-events:none;
 }
 
-/* ===== CHANNEL ROW ===== */
+/* ===== Channels ===== */
 .channels{
   display:flex;
-  gap:26px;
+  gap:28px;
+  align-items:center;
 }
 
 .card{
-  width:240px;
-  padding:16px;
-  border-radius:18px;
-  background:rgba(255,255,255,.08);
+  width:260px;
+  padding:20px;
+  border-radius:22px;
+  background:rgba(255,255,255,.07);
   text-align:center;
   transition:.25s;
 }
@@ -68,35 +69,33 @@ video{
 
 .card span{
   display:block;
-  margin-top:10px;
+  margin-top:14px;
   font-size:20px;
-  opacity:.9;
 }
 
-/* ===== ACTIVE ===== */
+/* Focus */
 .card.active{
   background:#ff6f00;
   transform:scale(1.18);
-  box-shadow:0 0 30px rgba(255,111,0,.7);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
 }
 
-/* ===== HINT ===== */
+/* Hint */
 .hint{
   position:fixed;
   top:20px;
   right:30px;
   font-size:14px;
-  opacity:.65;
-  z-index:10;
+  opacity:.6;
 }
 </style>
 </head>
 
 <body>
 
-<video id="player" autoplay muted playsinline></video>
+<video id="player" autoplay playsinline></video>
 
-<div class="hint">⬅ ➡ تغيير القناة | ⬆ إظهار القائمة</div>
+<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
 <div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
@@ -104,37 +103,37 @@ video{
 
 <script>
 const CHANNELS_URL = "channels.json";
-
 const video   = document.getElementById("player");
 const overlay = document.getElementById("overlay");
 const list    = document.getElementById("channels");
 
-let hls=null;
-let index=0;
-let hideTimer=null;
-let channels=[];
+let hls=null, index=0, hideTimer=null, channels=[];
 
-/* ===== PLAY ===== */
+/* ===== Play ===== */
 function play(url){
   if(hls){hls.destroy();hls=null}
+
   if(Hls.isSupported()){
-    hls=new Hls({enableWorker:true});
+    hls=new Hls();
     hls.loadSource(url);
     hls.attachMedia(video);
   }else{
     video.src=url;
   }
+
+  video.muted=false;   // 🔊 تشغيل الصوت
+  video.volume=1;
   video.play().catch(()=>{});
 }
 
-/* ===== OVERLAY ===== */
+/* ===== Overlay ===== */
 function showOverlay(){
   overlay.classList.remove("hide");
   clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4500);
+  hideTimer=setTimeout(()=>overlay.classList.add("hide"),5000);
 }
 
-/* ===== FOCUS ===== */
+/* ===== Focus ===== */
 function focus(){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   const card=list.children[index];
@@ -144,7 +143,7 @@ function focus(){
   }
 }
 
-/* ===== LOAD CHANNELS ===== */
+/* ===== Load Channels ===== */
 fetch(CHANNELS_URL)
 .then(r=>r.json())
 .then(data=>{
@@ -161,38 +160,24 @@ fetch(CHANNELS_URL)
   focus();
 });
 
-/* ===== REMOTE CONTROL ===== */
+/* ===== Remote ===== */
 document.addEventListener("keydown",e=>{
-  if(!channels.length) return;
   showOverlay();
-
-  if(e.key==="ArrowRight"){
-    index=(index+1)%channels.length;
-    focus();
-  }
-  if(e.key==="ArrowLeft"){
-    index=(index-1+channels.length)%channels.length;
-    focus();
-  }
-  if(e.key==="ArrowUp"){
-    showOverlay();
-  }
+  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
+  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
+  if(e.key==="ArrowUp"){showOverlay()}
 });
 
-/* ===== TOUCH (اختياري) ===== */
+/* ===== Touch ===== */
 let startX=0;
-
 document.addEventListener("touchstart",e=>{
   startX=e.touches[0].clientX;
   showOverlay();
 });
-
 document.addEventListener("touchend",e=>{
   const diff=e.changedTouches[0].clientX-startX;
   if(Math.abs(diff)>60){
-    index=diff<0
-      ? (index+1)%channels.length
-      : (index-1+channels.length)%channels.length;
+    index=diff<0?(index+1)%channels.length:(index-1+channels.length)%channels.length;
     focus();
   }
 });
