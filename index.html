@@ -26,7 +26,7 @@ video{
   inset:0;
   width:100%;
   height:100%;
-  object-fit:contain; /* تلفاز حقيقي */
+  object-fit:contain;
   background:#000;
 }
 
@@ -62,8 +62,8 @@ video{
   bottom:0;
   left:0;
   width:100%;
-  padding:16px 32px; /* ✔️ مخفف */
-  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+  padding:12px 28px;   /* ✅ أقل ارتفاع */
+  background:linear-gradient(to top,rgba(0,0,0,.88),transparent);
   transition:.35s;
 }
 
@@ -75,13 +75,13 @@ video{
 /* ===== Channels ===== */
 .channels{
   display:flex;
-  gap:20px;
+  gap:18px;
   align-items:center;
 }
 
 .card{
-  width:220px;
-  padding:14px;
+  width:210px;         /* ✅ أنحف */
+  padding:12px;
   border-radius:18px;
   background:rgba(255,255,255,.07);
   text-align:center;
@@ -90,14 +90,14 @@ video{
 
 .card img{
   width:100%;
-  height:70px; /* ✔️ أقل */
+  height:64px;         /* ✅ أقل */
   object-fit:contain;
 }
 
 .card span{
   display:block;
-  margin-top:8px;
-  font-size:18px;
+  margin-top:6px;
+  font-size:17px;      /* ✅ أصغر قليلًا */
 }
 
 /* Focus */
@@ -116,17 +116,12 @@ video{
   opacity:.6;
   transition:.3s;
 }
-
-/* يخفي الإرشاد مع القنوات */
-.overlay.hide ~ .hint{
-  opacity:0;
-}
 </style>
 </head>
 
 <body>
 
-<!-- Splash Screen -->
+<!-- Splash -->
 <div id="splash" class="splash">
   <div class="splash-box">
     <h1>ElAhmad TV</h1>
@@ -138,7 +133,7 @@ video{
 <video id="player" autoplay playsinline></video>
 
 <!-- Hint -->
-<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
+<div id="hint" class="hint">⬅️➡️ تغيير القناة | ⬆️ إظهار/إخفاء القائمة</div>
 
 <!-- Overlay -->
 <div class="overlay hide" id="overlay">
@@ -151,6 +146,7 @@ const CHANNELS_URL="channels.json";
 const video   = document.getElementById("player");
 const overlay = document.getElementById("overlay");
 const list    = document.getElementById("channels");
+const hint    = document.getElementById("hint");
 
 let hls=null;
 let index=0;
@@ -174,11 +170,16 @@ function play(url){
   video.play().catch(()=>{});
 }
 
-/* ===== Overlay ===== */
+/* ===== Overlay + Hint ===== */
 function showOverlay(){
   overlay.classList.remove("hide");
+  hint.style.opacity="0.6";
+
   clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>overlay.classList.add("hide"),5000);
+  hideTimer=setTimeout(()=>{
+    overlay.classList.add("hide");
+    hint.style.opacity="0";   // ✅ يختفي مع القنوات
+  },4500);
 }
 
 /* ===== Focus ===== */
@@ -189,7 +190,6 @@ function focus(){
     card.classList.add("active");
     play(channels[index].stream);
 
-    /* إخفاء Splash بعد أول تشغيل */
     const splash=document.getElementById("splash");
     if(splash){
       setTimeout(()=>{
@@ -217,7 +217,7 @@ fetch(CHANNELS_URL)
   focus();
 });
 
-/* ===== Remote Control ===== */
+/* ===== Remote ===== */
 document.addEventListener("keydown",e=>{
   showOverlay();
   if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
