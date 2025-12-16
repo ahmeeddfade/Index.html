@@ -1,581 +1,242 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ElAhmad TV - 📺</title>
+<title>ElAhmad TV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-* { 
-  box-sizing: border-box; 
-  margin: 0;
-  padding: 0;
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family:Arial,sans-serif;
+  color:#fff;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  color: #fff;
+/* ===== Video ===== */
+video{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain; /* تلفاز حقيقي */
+  background:#000;
 }
 
-/* ===== شاشة الترحيب ===== */
-#splash {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  opacity: 1;
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+/* ===== Splash ===== */
+.splash{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+  transition:opacity .8s;
 }
 
-#splash.fade-out {
-  opacity: 0;
+.splash-box{
+  text-align:center;
 }
 
-.splash-box {
-  text-align: center;
-  animation: float 3s ease-in-out infinite;
+.splash-box h1{
+  font-size:48px;
+  margin:0 0 12px;
 }
 
-.splash-box h1 {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
-  background: linear-gradient(90deg, #ff6f00, #ffbb00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 1px;
-  font-weight: 700;
+.splash-box p{
+  font-size:20px;
+  opacity:.7;
 }
 
-.splash-box p {
-  font-size: 1.3rem;
-  opacity: 0.8;
-  margin-top: 0.5rem;
-  animation: pulse 2s infinite;
+/* ===== Overlay ===== */
+.overlay{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  padding:16px 32px; /* ✔️ مخفف */
+  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+  transition:.35s;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+.overlay.hide{
+  opacity:0;
+  pointer-events:none;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
+/* ===== Channels ===== */
+.channels{
+  display:flex;
+  gap:20px;
+  align-items:center;
 }
 
-/* ===== الفيديو ===== */
-video {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #000;
-  z-index: 1;
+.card{
+  width:220px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.07);
+  text-align:center;
+  transition:.25s;
 }
 
-/* ===== النص الإرشادي ===== */
-.hint {
-  position: fixed;
-  top: 24px;
-  left: 30px; /* تغيير من right إلى left لأننا استخدمنا dir="rtl" */
-  font-size: 14px;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-  z-index: 4;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 8px 16px;
-  border-radius: 20px;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.card img{
+  width:100%;
+  height:70px; /* ✔️ أقل */
+  object-fit:contain;
 }
 
-.overlay.hide ~ .hint {
-  opacity: 0;
-  pointer-events: none;
+.card span{
+  display:block;
+  margin-top:8px;
+  font-size:18px;
 }
 
-/* ===== Overlay القنوات ===== */
-.overlay {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 16px 32px; /* ✅ تم تقليل الارتفاع */
-  background: linear-gradient(to top, 
-    rgba(0, 0, 0, 0.95) 0%, 
-    rgba(0, 0, 0, 0.85) 40%, 
-    transparent 100%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 3;
-  display: flex;
-  justify-content: center;
+/* Focus */
+.card.active{
+  background:#ff6f00;
+  transform:scale(1.15);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
 }
 
-.overlay.hide {
-  opacity: 0;
-  transform: translateY(20px);
-  pointer-events: none;
+/* ===== Hint ===== */
+.hint{
+  position:fixed;
+  top:20px;
+  right:30px;
+  font-size:14px;
+  opacity:.6;
+  transition:.3s;
 }
 
-/* ===== القنوات ===== */
-.channels {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  justify-content: center;
-  max-width: 95%;
-  overflow-x: auto;
-  padding: 8px 0;
-  scrollbar-width: none; /* Firefox */
-}
-
-.channels::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
-}
-
-/* ===== كروت القنوات ===== */
-.card {
-  width: 220px; /* ✅ تم تقليل العرض */
-  padding: 14px; /* ✅ تم تقليل padding */
-  border-radius: 18px; /* ✅ تم تقليل الزوايا قليلاً */
-  background: rgba(255, 255, 255, 0.07);
-  text-align: center;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-}
-
-.card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-4px);
-}
-
-.card img {
-  width: 100%;
-  height: 70px; /* ✅ تم تقليل ارتفاع الصورة */
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-}
-
-.card span {
-  display: block;
-  margin-top: 8px; /* ✅ تم تقليل المسافة */
-  font-size: 18px; /* ✅ تم تقليل حجم الخط قليلاً */
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ===== التركيز على القناة النشطة ===== */
-.card.active {
-  background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%);
-  transform: scale(1.18);
-  box-shadow: 
-    0 12px 40px rgba(255, 111, 0, 0.4),
-    0 0 0 2px rgba(255, 255, 255, 0.1);
-  z-index: 2;
-}
-
-.card.active span {
-  color: white;
-  font-weight: 600;
-}
-
-/* ===== مؤشر التمرير ===== */
-.scroll-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 111, 0, 0.3);
-  transform-origin: 0 0;
-  animation: scroll-progress 5s linear;
-}
-
-@keyframes scroll-progress {
-  0% { transform: scaleX(0); }
-  100% { transform: scaleX(1); }
-}
-
-/* ===== تحسينات للشاشات الكبيرة ===== */
-@media (min-width: 1600px) {
-  .card {
-    width: 240px;
-    padding: 16px;
-  }
-  
-  .card img {
-    height: 80px;
-  }
-}
-
-/* ===== مؤشر التحميل ===== */
-.loading {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 20px 30px;
-  border-radius: 12px;
-  display: none;
-}
-
-.loading.show {
-  display: block;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid #ff6f00;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 10px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* يخفي الإرشاد مع القنوات */
+.overlay.hide ~ .hint{
+  opacity:0;
 }
 </style>
 </head>
 
 <body>
 
-<!-- شاشة الترحيب -->
-<div id="splash">
+<!-- Splash Screen -->
+<div id="splash" class="splash">
   <div class="splash-box">
     <h1>ElAhmad TV</h1>
     <p>نتمنى لك مشاهدة ممتعة 📺✨</p>
-    <div class="loading-spinner" style="margin-top: 20px;"></div>
   </div>
 </div>
 
-<!-- مؤشر التحميل -->
-<div class="loading" id="loading">
-  <div class="loading-spinner"></div>
-  <p>جاري تحميل القناة...</p>
-</div>
-
-<!-- الفيديو الرئيسي -->
+<!-- Video -->
 <video id="player" autoplay playsinline></video>
 
-<!-- النص الإرشادي -->
-<div class="hint">⬅️➡️ تغيير القناة | ⬆️ إظهار/إخفاء القائمة</div>
+<!-- Hint -->
+<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
-<!-- قائمة القنوات -->
+<!-- Overlay -->
 <div class="overlay hide" id="overlay">
-  <div class="scroll-indicator"></div>
   <div class="channels" id="channels"></div>
 </div>
 
 <script>
-// عناصر DOM
-const video = document.getElementById("player");
+const CHANNELS_URL="channels.json";
+
+const video   = document.getElementById("player");
 const overlay = document.getElementById("overlay");
-const list = document.getElementById("channels");
-const splash = document.getElementById("splash");
-const loading = document.getElementById("loading");
+const list    = document.getElementById("channels");
 
-// متغيرات التطبيق
-let hls = null;
-let index = 0;
-let hideTimer = null;
-let channels = [];
-let splashRemoved = false;
-const CHANNELS_URL = "channels.json";
+let hls=null;
+let index=0;
+let hideTimer=null;
+let channels=[];
 
-/* ===== تشغيل القناة ===== */
-function play(url, showLoading = true) {
-  if (showLoading) {
-    loading.classList.add('show');
-  }
-  
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
+/* ===== Play ===== */
+function play(url){
+  if(hls){hls.destroy();hls=null}
 
-  if (Hls.isSupported()) {
-    hls = new Hls({
-      enableWorker: true,
-      lowLatencyMode: true,
-      backBufferLength: 90
-    });
-    
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      loading.classList.remove('show');
-    });
-    
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      console.error('HLS error:', data);
-      if (data.fatal) {
-        switch(data.type) {
-          case Hls.ErrorTypes.NETWORK_ERROR:
-            hls.startLoad();
-            break;
-          case Hls.ErrorTypes.MEDIA_ERROR:
-            hls.recoverMediaError();
-            break;
-          default:
-            loading.classList.remove('show');
-            break;
-        }
-      }
-    });
-    
+  if(Hls.isSupported()){
+    hls=new Hls();
     hls.loadSource(url);
     hls.attachMedia(video);
-  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = url;
-    loading.classList.remove('show');
+  }else{
+    video.src=url;
   }
 
-  // تشغيل الصوت
-  video.muted = false;
-  video.volume = 1;
-  
-  video.play().catch(err => {
-    console.log('Auto-play prevented:', err);
-    loading.classList.remove('show');
-  });
-  
-  // إخفاء شاشة الترحيب بعد أول تشغيل
-  if (!splashRemoved) {
-    setTimeout(() => {
-      splash.classList.add('fade-out');
-      setTimeout(() => {
-        splash.style.display = 'none';
-        splashRemoved = true;
-      }, 800);
-    }, 1200);
-  }
+  video.muted=false;
+  video.volume=1;
+  video.play().catch(()=>{});
 }
 
-/* ===== إظهار/إخفاء القائمة ===== */
-function showOverlay() {
-  overlay.classList.remove('hide');
+/* ===== Overlay ===== */
+function showOverlay(){
+  overlay.classList.remove("hide");
   clearTimeout(hideTimer);
-  
-  // إعادة تشغيل مؤشر التمرير
-  const indicator = document.querySelector('.scroll-indicator');
-  indicator.style.animation = 'none';
-  setTimeout(() => {
-    indicator.style.animation = 'scroll-progress 5s linear';
-  }, 10);
-  
-  hideTimer = setTimeout(() => {
-    overlay.classList.add('hide');
-  }, 5000);
+  hideTimer=setTimeout(()=>overlay.classList.add("hide"),5000);
 }
 
-/* ===== التركيز على القناة ===== */
-function focus() {
-  // إزالة التركيز من جميع الكروت
-  document.querySelectorAll('.card').forEach(card => {
-    card.classList.remove('active');
-  });
-  
-  // إضافة التركيز للكارت الحالي
-  const card = list.children[index];
-  if (card) {
-    card.classList.add('active');
-    
-    // تمرير القناة النشطة إلى المنتصف إن أمكن
-    card.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center'
-    });
-    
+/* ===== Focus ===== */
+function focus(){
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  const card=list.children[index];
+  if(card){
+    card.classList.add("active");
     play(channels[index].stream);
+
+    /* إخفاء Splash بعد أول تشغيل */
+    const splash=document.getElementById("splash");
+    if(splash){
+      setTimeout(()=>{
+        splash.style.opacity="0";
+        setTimeout(()=>splash.remove(),800);
+      },1200);
+    }
   }
 }
 
-/* ===== تحميل القنوات ===== */
-function loadChannels() {
-  fetch(CHANNELS_URL)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`خطأ في تحميل القنوات: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      channels = data.channels;
-      
-      // إضافة القنوات إلى الواجهة
-      channels.forEach((channel, i) => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.tabIndex = 0;
-        card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', `قناة ${channel.name}`);
-        
-        card.innerHTML = `
-          <img src="${channel.logo}" alt="${channel.name}" loading="lazy">
-          <span>${channel.name}</span>
-        `;
-        
-        // النقر على القناة
-        card.addEventListener('click', () => {
-          index = i;
-          focus();
-          showOverlay();
-        });
-        
-        list.appendChild(card);
-      });
-      
-      // التركيز على القناة الأولى
-      focus();
-      
-      // إظهار القائمة مؤقتاً عند التحميل
-      showOverlay();
-    })
-    .catch(error => {
-      console.error('فشل تحميل القنوات:', error);
-      // عرض رسالة خطأ
-      list.innerHTML = `
-        <div style="text-align: center; padding: 40px;">
-          <h3>⚠️ تعذر تحميل القنوات</h3>
-          <p>تحقق من اتصال الإنترنت أو ملف channels.json</p>
-        </div>
-      `;
-    });
-}
-
-/* ===== التحكم عن بعد (لوحة المفاتيح) ===== */
-document.addEventListener('keydown', (e) => {
-  if (!channels.length) return;
-  
-  e.preventDefault();
-  
-  switch(e.key) {
-    case 'ArrowRight':
-    case 'ArrowLeft':
-      showOverlay();
-      if (e.key === 'ArrowRight') {
-        index = (index + 1) % channels.length;
-      } else {
-        index = (index - 1 + channels.length) % channels.length;
-      }
-      focus();
-      break;
-      
-    case 'ArrowUp':
-    case 'ArrowDown':
-      if (overlay.classList.contains('hide')) {
-        showOverlay();
-      } else {
-        overlay.classList.add('hide');
-      }
-      break;
-      
-    case ' ': // Spacebar
-      if (video.paused) {
-        video.play();
-      } else {
-        video.pause();
-      }
-      break;
-      
-    case 'm': // Mute toggle
-    case 'M':
-      video.muted = !video.muted;
-      break;
-  }
+/* ===== Load Channels ===== */
+fetch(CHANNELS_URL)
+.then(r=>r.json())
+.then(data=>{
+  channels=data.channels;
+  channels.forEach(c=>{
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`
+      <img src="${c.logo}">
+      <span>${c.name}</span>
+    `;
+    list.appendChild(d);
+  });
+  focus();
 });
 
-/* ===== التحكم باللمس ===== */
-let startX = 0;
-let startTime = 0;
+/* ===== Remote Control ===== */
+document.addEventListener("keydown",e=>{
+  showOverlay();
+  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
+  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
+  if(e.key==="ArrowUp"){showOverlay()}
+});
 
-document.addEventListener('touchstart', (e) => {
-  startX = e.touches[0].clientX;
-  startTime = Date.now();
+/* ===== Touch ===== */
+let startX=0;
+document.addEventListener("touchstart",e=>{
+  startX=e.touches[0].clientX;
   showOverlay();
 });
-
-document.addEventListener('touchend', (e) => {
-  const endX = e.changedTouches[0].clientX;
-  const endTime = Date.now();
-  const diffX = endX - startX;
-  const diffTime = endTime - startTime;
-  
-  // تأكيد أن الحركة سريعة وليست تمرير عادي
-  if (diffTime < 300 && Math.abs(diffX) > 60) {
-    if (diffX < 0) { // سحب لليسار
-      index = (index + 1) % channels.length;
-    } else { // سحب لليمين
-      index = (index - 1 + channels.length) % channels.length;
-    }
+document.addEventListener("touchend",e=>{
+  const diff=e.changedTouches[0].clientX-startX;
+  if(Math.abs(diff)>60){
+    index=diff<0?(index+1)%channels.length:(index-1+channels.length)%channels.length;
     focus();
   }
-});
-
-/* ===== إعادة إظهار القائمة عند تحريك الماوس ===== */
-let mouseTimer = null;
-document.addEventListener('mousemove', () => {
-  if (overlay.classList.contains('hide')) {
-    showOverlay();
-  }
-  
-  clearTimeout(mouseTimer);
-  mouseTimer = setTimeout(() => {
-    if (!overlay.classList.contains('hide')) {
-      overlay.classList.add('hide');
-    }
-  }, 3000);
-});
-
-/* ===== تهيئة التطبيق ===== */
-function init() {
-  loadChannels();
-  
-  // إضافة مؤشر التمرير
-  const indicator = document.createElement('div');
-  indicator.className = 'scroll-indicator';
-  overlay.appendChild(indicator);
-  
-  // إخفاء شاشة الترحيب تلقائياً بعد 5 ثواني إذا لم يتم تشغيل قناة
-  setTimeout(() => {
-    if (!splashRemoved) {
-      splash.classList.add('fade-out');
-      setTimeout(() => {
-        splash.style.display = 'none';
-        splashRemoved = true;
-      }, 800);
-    }
-  }, 5000);
-}
-
-// بدء التطبيق عند تحميل الصفحة
-window.addEventListener('DOMContentLoaded', init);
-
-// كود احتياطي في حالة فشل HLS
-video.addEventListener('error', () => {
-  loading.classList.remove('show');
-  console.error('خطأ في تشغيل الفيديو');
 });
 </script>
 
