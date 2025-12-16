@@ -33,7 +33,7 @@ html, body {
   justify-content: center;
   z-index: 9999;
   opacity: 1;
-  transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #splash.fade-out {
@@ -88,7 +88,7 @@ video {
 .hint {
   position: fixed;
   top: 24px;
-  left: 40px; /* تغيير من right إلى left لأننا استخدمنا dir="rtl" */
+  left: 30px; /* تغيير من right إلى left لأننا استخدمنا dir="rtl" */
   font-size: 14px;
   opacity: 0.6;
   transition: opacity 0.3s ease;
@@ -100,18 +100,13 @@ video {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.overlay.hide ~ .hint {
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* ===== Overlay القنوات ===== */
 .overlay {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 8px 26px; /* ✅ تم تقليل الارتفاع */
+  padding: 16px 32px; /* ✅ تم تقليل الارتفاع */
   background: linear-gradient(to top, 
     rgba(0, 0, 0, 0.95) 0%, 
     rgba(0, 0, 0, 0.85) 40%, 
@@ -374,7 +369,14 @@ function play(url, showLoading = true) {
 /* ===== إظهار/إخفاء القائمة ===== */
 function showOverlay() {
   overlay.classList.remove('hide');
+  hint.style.opacity = '0.6';   // 🔹 إظهار النص
+
   clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    overlay.classList.add('hide');
+    hint.style.opacity = '0';   // 🔹 إخفاء النص مع القنوات
+  }, 5000);
+}
   
   // إعادة تشغيل مؤشر التمرير
   const indicator = document.querySelector('.scroll-indicator');
