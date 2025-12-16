@@ -15,69 +15,84 @@ body{
   font-family:Arial, sans-serif;
   direction:rtl;
   color:#fff;
+  overflow:hidden;
 }
+
+/* Header */
 .header{
   background:#c62828;
-  padding:14px;
+  padding:12px;
   font-size:18px;
   font-weight:bold;
   text-align:center;
 }
+
+/* Player */
 .player-wrap{
   position:relative;
+  background:#000;
 }
 video{
   width:100%;
-  max-height:55vh;
+  height:55vh;
   background:#000;
-  transition:.25s;
 }
-video.loading{opacity:.4}
 
+/* Loader */
 .loader{
   display:none;
   position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(0,0,0,.7);
-  padding:8px 16px;
-  border-radius:20px;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
   color:#ff7043;
 }
 
+/* Status */
 .status{
-  padding:10px;
+  padding:8px;
   font-size:14px;
   background:#111;
   color:#ccc;
 }
 
+/* Channels */
 .channels{
   display:grid;
   grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:10px;
+  gap:14px;
+  padding:14px;
 }
+
+/* Card */
 .card{
   background:#111;
-  border-radius:12px;
+  border-radius:14px;
   text-align:center;
   cursor:pointer;
-  transition:.25s;
+  transition:.2s;
+  outline:none;
 }
-.card:hover{background:#1a1a1a}
+.card:hover,
+.card:focus,
 .card.active{
-  box-shadow:0 0 0 2px #ff7043,0 0 20px rgba(255,112,67,.35);
+  box-shadow:0 0 0 3px #ff7043;
+  transform:scale(1.05);
+  background:#1a1a1a;
 }
+
 .card img{
   width:100%;
   height:90px;
   object-fit:contain;
+  background:#000;
 }
 .card span{
   display:block;
   padding:8px;
+  font-size:14px;
 }
 </style>
 </head>
@@ -91,75 +106,74 @@ video.loading{opacity:.4}
   <div class="loader" id="loader">جاري التحميل...</div>
 </div>
 
-<div class="status" id="status">جاري تحميل القنوات...</div>
+<div class="status" id="status">اختر قناة للتشغيل</div>
 <div class="channels" id="channels"></div>
 
 <script>
 const CHANNELS_URL = "channels.json";
-
-const video = document.getElementById("player");
-const list = document.getElementById("channels");
-const statusE = document.getElementById("status");
+const video  = document.getElementById("player");
+const list   = document.getElementById("channels");
+const status = document.getElementById("status");
 const loader = document.getElementById("loader");
 
-let hls = null;
+let hls=null;
 
+/* تشغيل البث */
 function playStream(url){
-  loader.style.display="block";
-  video.classList.add("loading");
-  statusE.textContent="جاري فتح القناة...";
+  status.textContent="جاري فتح القناة...";
+  loader.style.display="flex";
 
   if(hls){ hls.destroy(); hls=null; }
 
   if(Hls.isSupported()){
-    hls = new Hls({
-      lowLatencyMode:true,
-      backBufferLength:60
-    });
+    hls=new Hls({lowLatencyMode:true});
     hls.loadSource(url);
     hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play());
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play());
   }else{
     video.src=url;
     video.play();
   }
 }
 
+/* تحميل القنوات */
 fetch(CHANNELS_URL)
 .then(r=>r.json())
 .then(data=>{
-  statusE.textContent="اختر قناة للتشغيل";
-
   data.channels.forEach((ch,i)=>{
-    const card=document.createElement("div");
-    card.className="card";
+    const c=document.createElement("div");
+    c.className="card";
+    c.tabIndex=0;
 
-    card.innerHTML=`
+    c.innerHTML=`
       <img src="${ch.logo}">
       <span>${ch.name}</span>
     `;
 
-    card.onclick=()=>{
-      document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-      card.classList.add("active");
+    c.onclick=()=>{
+      document.querySelectorAll(".card").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active");
       playStream(ch.stream);
     };
 
-    list.appendChild(card);
+    list.appendChild(c);
 
     if(i===0){
-      card.classList.add("active");
-      playStream(ch.stream);
+      setTimeout(()=>c.click(),400);
     }
   });
 });
 
-video.addEventListener("playing", ()=>{
+/* أحداث */
+video.addEventListener("playing",()=>{
   loader.style.display="none";
-  video.classList.remove("loading");
-  statusE.textContent="يعمل الآن ✔";
+  status.textContent="يعمل الآن ✔";
+});
+video.addEventListener("error",()=>{
+  loader.style.display="none";
+  status.textContent="خطأ في البث";
 });
 </script>
 
 </body>
-</html>
+  </html>
