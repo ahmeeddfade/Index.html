@@ -25,8 +25,31 @@ video{
   inset:0;
   width:100%;
   height:100%;
-  object-fit:contain; /* ✅ مهم للتلفاز */
+  object-fit:cover;
   background:#000;
+}
+
+/* ===== Splash ===== */
+.splash{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+  transition:opacity .8s;
+}
+.splash-box{
+  text-align:center;
+}
+.splash-box h1{
+  font-size:48px;
+  margin:0 0 10px;
+}
+.splash-box p{
+  font-size:20px;
+  opacity:.7;
 }
 
 /* ===== Overlay ===== */
@@ -35,11 +58,10 @@ video{
   bottom:0;
   left:0;
   width:100%;
-  padding:28px 40px;
-  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
-  transition:.3s;
+  padding:16px 32px;
+  background:linear-gradient(to top,rgba(0,0,0,.75),transparent);
+  transition:.35s;
 }
-
 .overlay.hide{
   opacity:0;
   pointer-events:none;
@@ -48,50 +70,61 @@ video{
 /* ===== Channels ===== */
 .channels{
   display:flex;
-  gap:28px;
+  gap:18px;
   align-items:center;
 }
 
 .card{
-  width:260px;
-  padding:20px;
-  border-radius:22px;
-  background:rgba(255,255,255,.07);
+  width:220px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.06);
   text-align:center;
   transition:.25s;
 }
 
 .card img{
   width:100%;
-  height:90px;
+  height:70px;
   object-fit:contain;
 }
 
 .card span{
   display:block;
-  margin-top:14px;
-  font-size:20px;
+  margin-top:8px;
+  font-size:18px;
 }
 
-/* Focus */
+/* Active Channel */
 .card.active{
-  background:#ff6f00;
-  transform:scale(1.18);
-  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  background:#ff7043;
+  transform:scale(1.12);
 }
 
-/* Hint */
+/* ===== Hint ===== */
 .hint{
   position:fixed;
   top:20px;
   right:30px;
   font-size:14px;
   opacity:.6;
+  transition:.3s;
+}
+.overlay.hide ~ .hint{
+  opacity:0;
 }
 </style>
 </head>
 
 <body>
+
+<!-- Splash -->
+<div id="splash" class="splash">
+  <div class="splash-box">
+    <h1>ElAhmad TV</h1>
+    <p>نتمنى لك مشاهدة ممتعة 📺✨</p>
+  </div>
+</div>
 
 <video id="player" autoplay playsinline></video>
 
@@ -103,15 +136,22 @@ video{
 
 <script>
 const CHANNELS_URL = "channels.json";
+
 const video   = document.getElementById("player");
 const overlay = document.getElementById("overlay");
 const list    = document.getElementById("channels");
+const splash  = document.getElementById("splash");
 
-let hls=null, index=0, hideTimer=null, channels=[];
+let hls=null;
+let index=0;
+let hideTimer=null;
+let channels=[];
 
-/* ===== Play ===== */
+/* ===== Play Channel ===== */
 function play(url){
   if(hls){hls.destroy();hls=null}
+  video.muted = false;
+  video.volume = 1;
 
   if(Hls.isSupported()){
     hls=new Hls();
@@ -120,33 +160,34 @@ function play(url){
   }else{
     video.src=url;
   }
-
-  video.muted=false;   // 🔊 تشغيل الصوت
-  video.volume=1;
-  video.play().catch(()=>{});
 }
 
 /* ===== Overlay ===== */
 function showOverlay(){
   overlay.classList.remove("hide");
   clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>overlay.classList.add("hide"),5000);
+  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4000);
 }
 
-/* ===== Focus ===== */
+/* ===== Focus Channel ===== */
 function focus(){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   const card=list.children[index];
   if(card){
     card.classList.add("active");
     play(channels[index].stream);
+
+    if(splash){
+      setTimeout(()=>{
+        splash.style.opacity="0";
+        setTimeout(()=>splash.remove(),800);
+      },1000);
+    }
   }
 }
 
 /* ===== Load Channels ===== */
-fetch(CHANNELS_URL)
-.then(r=>r.json())
-.then(data=>{
+fetch(CHANNELS_URL).then(r=>r.json()).then(data=>{
   channels=data.channels;
   channels.forEach(c=>{
     const d=document.createElement("div");
@@ -176,7 +217,7 @@ document.addEventListener("touchstart",e=>{
 });
 document.addEventListener("touchend",e=>{
   const diff=e.changedTouches[0].clientX-startX;
-  if(Math.abs(diff)>60){
+  if(Math.abs(diff)>50){
     index=diff<0?(index+1)%channels.length:(index-1+channels.length)%channels.length;
     focus();
   }
