@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>ElAhmad TV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -19,7 +19,7 @@ html,body{
   color:#fff;
 }
 
-/* ===== Video ===== */
+/* ===== VIDEO FULLSCREEN ===== */
 video{
   position:fixed;
   inset:0;
@@ -29,14 +29,14 @@ video{
   background:#000;
 }
 
-/* ===== Overlay Channels ===== */
+/* ===== OVERLAY ===== */
 .overlay{
   position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  padding:20px;
-  background:linear-gradient(to top,rgba(0,0,0,.85),transparent);
+  inset:0;
+  display:flex;
+  align-items:flex-end;
+  background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.15),transparent);
+  padding:40px;
   transition:.35s;
 }
 
@@ -45,56 +45,58 @@ video{
   pointer-events:none;
 }
 
-/* ===== Channel Row ===== */
+/* ===== CHANNEL ROW ===== */
 .channels{
   display:flex;
-  gap:20px;
-  align-items:center;
+  gap:26px;
 }
 
 .card{
-  width:220px;
-  padding:14px;
-  border-radius:14px;
-  background:rgba(255,255,255,.06);
+  width:240px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.08);
   text-align:center;
   transition:.25s;
 }
 
 .card img{
   width:100%;
-  height:80px;
+  height:90px;
   object-fit:contain;
 }
 
 .card span{
   display:block;
-  margin-top:8px;
-  font-size:18px;
+  margin-top:10px;
+  font-size:20px;
+  opacity:.9;
 }
 
-/* Focused */
+/* ===== ACTIVE ===== */
 .card.active{
-  background:#ff7043;
-  transform:scale(1.15);
+  background:#ff6f00;
+  transform:scale(1.18);
+  box-shadow:0 0 30px rgba(255,111,0,.7);
 }
 
-/* ===== Hint ===== */
+/* ===== HINT ===== */
 .hint{
   position:fixed;
   top:20px;
-  right:20px;
+  right:30px;
   font-size:14px;
-  opacity:.7;
+  opacity:.65;
+  z-index:10;
 }
 </style>
 </head>
 
 <body>
 
-<video id="player" autoplay muted></video>
+<video id="player" autoplay muted playsinline></video>
 
-<div class="hint">⬅️➡️ تغيير القناة | ⬆️ إظهار القائمة</div>
+<div class="hint">⬅ ➡ تغيير القناة | ⬆ إظهار القائمة</div>
 
 <div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
@@ -112,26 +114,27 @@ let index=0;
 let hideTimer=null;
 let channels=[];
 
-/* ===== Play ===== */
+/* ===== PLAY ===== */
 function play(url){
   if(hls){hls.destroy();hls=null}
   if(Hls.isSupported()){
-    hls=new Hls();
+    hls=new Hls({enableWorker:true});
     hls.loadSource(url);
     hls.attachMedia(video);
   }else{
     video.src=url;
   }
+  video.play().catch(()=>{});
 }
 
-/* ===== Overlay ===== */
+/* ===== OVERLAY ===== */
 function showOverlay(){
   overlay.classList.remove("hide");
   clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4000);
+  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4500);
 }
 
-/* ===== Focus ===== */
+/* ===== FOCUS ===== */
 function focus(){
   document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
   const card=list.children[index];
@@ -141,8 +144,10 @@ function focus(){
   }
 }
 
-/* ===== Load Channels ===== */
-fetch(CHANNELS_URL).then(r=>r.json()).then(data=>{
+/* ===== LOAD CHANNELS ===== */
+fetch(CHANNELS_URL)
+.then(r=>r.json())
+.then(data=>{
   channels=data.channels;
   channels.forEach(c=>{
     const d=document.createElement("div");
@@ -156,13 +161,40 @@ fetch(CHANNELS_URL).then(r=>r.json()).then(data=>{
   focus();
 });
 
-/* ===== Remote Control ===== */
+/* ===== REMOTE CONTROL ===== */
 document.addEventListener("keydown",e=>{
+  if(!channels.length) return;
   showOverlay();
-  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
-  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
-  if(e.key==="ArrowUp"){showOverlay()}
-  if(e.key==="Backspace"){overlay.classList.remove("hide")}
+
+  if(e.key==="ArrowRight"){
+    index=(index+1)%channels.length;
+    focus();
+  }
+  if(e.key==="ArrowLeft"){
+    index=(index-1+channels.length)%channels.length;
+    focus();
+  }
+  if(e.key==="ArrowUp"){
+    showOverlay();
+  }
+});
+
+/* ===== TOUCH (اختياري) ===== */
+let startX=0;
+
+document.addEventListener("touchstart",e=>{
+  startX=e.touches[0].clientX;
+  showOverlay();
+});
+
+document.addEventListener("touchend",e=>{
+  const diff=e.changedTouches[0].clientX-startX;
+  if(Math.abs(diff)>60){
+    index=diff<0
+      ? (index+1)%channels.length
+      : (index-1+channels.length)%channels.length;
+    focus();
+  }
 });
 </script>
 
