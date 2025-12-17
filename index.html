@@ -5,49 +5,71 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
+<!-- ================== HLS ================== -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
+/* ======================================================
+   GLOBAL RESET
+====================================================== */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{
-  width:100%;height:100%;
+  width:100%;
+  height:100%;
   background:#000;
   overflow:hidden;
-  font-family:system-ui,Segoe UI,Arial;
+  font-family:system-ui,-apple-system,Segoe UI,Arial;
   color:#fff;
 }
 
-/* ===== Splash ===== */
+/* ======================================================
+   SPLASH SCREEN
+====================================================== */
 #splash{
-  position:fixed;inset:0;
+  position:fixed;
+  inset:0;
   background:linear-gradient(135deg,#0a0a0a,#1a1a2e);
-  display:flex;align-items:center;justify-content:center;
-  z-index:9999;transition:.6s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  transition:opacity .8s ease;
 }
-#splash.hide{opacity:0;pointer-events:none}
+#splash.hide{
+  opacity:0;
+  pointer-events:none;
+}
 #splash h1{
   font-size:48px;
+  letter-spacing:1px;
   background:linear-gradient(90deg,#ff6f00,#ffbb00);
   -webkit-background-clip:text;
   color:transparent;
 }
 
-/* ===== Video ===== */
+/* ======================================================
+   VIDEO
+====================================================== */
 video{
-  position:fixed;inset:0;
-  width:100%;height:100%;
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
   object-fit:contain;
   background:#000;
 }
 
-/* ===== Hint ===== */
+/* ======================================================
+   HINT
+====================================================== */
 .hint{
   position:fixed;
-  top:20px;left:30px;
+  top:20px;
+  left:30px;
   font-size:13px;
   opacity:0;
   transition:.3s;
-  background:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.55);
   padding:6px 14px;
   border-radius:20px;
   backdrop-filter:blur(4px);
@@ -55,199 +77,258 @@ video{
 }
 .overlay:not(.hide) ~ .hint{opacity:.6}
 
-/* ===== Overlay ===== */
+/* ======================================================
+   OVERLAY
+====================================================== */
 .overlay{
   position:fixed;
-  bottom:0;left:0;width:100%;
+  bottom:0;
+  left:0;
+  width:100%;
   padding:6px 20px;
   background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
-  transition:.3s;
+  transition:.35s ease;
 }
-.overlay.hide{opacity:0;transform:translateY(20px);pointer-events:none}
+.overlay.hide{
+  opacity:0;
+  transform:translateY(20px);
+  pointer-events:none;
+}
 
-/* ===== Channels ===== */
+/* ======================================================
+   CHANNELS BAR
+====================================================== */
 .channels{
   display:flex;
-  gap:14px;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
+  gap:14px;
   overflow-x:auto;
   padding:2px 0;
 }
 .channels::-webkit-scrollbar{display:none}
 
-/* ===== Card ===== */
+/* ======================================================
+   CARD
+====================================================== */
 .card{
   width:190px;
   padding:8px;
   border-radius:16px;
   background:rgba(255,255,255,.06);
-  backdrop-filter:blur(12px);
+  backdrop-filter:blur(14px);
   text-align:center;
   transition:.25s;
   filter:blur(1.5px);
   cursor:pointer;
 }
-.card img{height:62px;width:100%;object-fit:contain}
-.card span{font-size:15px;margin-top:4px;display:block}
+.card img{
+  width:100%;
+  height:62px;
+  object-fit:contain;
+}
+.card span{
+  display:block;
+  font-size:15px;
+  margin-top:4px;
+}
 .card.active{
   background:#ff6f00;
   transform:scale(1.15);
   filter:none;
-  box-shadow:0 10px 40px rgba(255,111,0,.5)
+  box-shadow:0 12px 40px rgba(255,111,0,.45);
 }
 
-/* ===== Settings ===== */
+/* ======================================================
+   SETTINGS
+====================================================== */
 .settings{
-  position:fixed;top:50%;left:50%;
+  position:fixed;
+  top:50%;
+  left:50%;
   transform:translate(-50%,-50%);
   background:#111;
-  padding:30px;
+  padding:28px;
   border-radius:20px;
   z-index:9999;
   display:none;
+  min-width:260px;
   text-align:center;
+}
+.settings h3{
+  margin-bottom:16px;
 }
 .settings button{
   width:100%;
-  margin:10px 0;
+  margin:8px 0;
   padding:12px;
   border:none;
   border-radius:10px;
   background:#ff6f00;
   color:#fff;
-  font-size:16px;
+  font-size:15px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="splash"><h1>ElAhmad TV</h1></div>
+<!-- SPLASH -->
+<div id="splash">
+  <h1>ElAhmad TV</h1>
+</div>
 
+<!-- VIDEO -->
 <video id="player" autoplay playsinline></video>
 
+<!-- HINT -->
 <div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
+<!-- CHANNELS -->
 <div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
 </div>
 
-<!-- Settings -->
+<!-- SETTINGS -->
 <div class="settings" id="settings">
   <h3>⚙️ الإعدادات</h3>
-  <button onclick="setPin()">تعيين رمز القفل</button>
-  <button onclick="clearPin()">إزالة القفل</button>
+  <button onclick="setPin()">قفل القنوات</button>
+  <button onclick="removePin()">إلغاء القفل</button>
   <button onclick="clearLast()">مسح آخر قناة</button>
-  <button onclick="closeApp()">خروج</button>
+  <button onclick="exitApp()">خروج</button>
 </div>
 
 <script>
+/* ======================================================
+   CORE
+====================================================== */
 const video=document.getElementById("player");
 const overlay=document.getElementById("overlay");
 const list=document.getElementById("channels");
 const splash=document.getElementById("splash");
 const settings=document.getElementById("settings");
 
-let channels=[],index=0,hls=null,hideTimer=null;
-const URL="channels.json";
+let channels=[],index=0,hls=null,timer=null;
+const DATA_URL="channels.json";
 
-/* ===== HLS ===== */
+/* ======================================================
+   PLAY
+====================================================== */
 function play(url){
- if(hls){hls.destroy()}
- if(Hls.isSupported()){
-  hls=new Hls({
-    maxBufferLength:60,
-    backBufferLength:120,
-    liveSyncDuration:3
-  });
-  hls.loadSource(url);
-  hls.attachMedia(video);
- }else video.src=url;
-
- video.play();
- localStorage.setItem("last",index);
-
- setTimeout(()=>splash.classList.add("hide"),3000);
+  if(hls){hls.destroy()}
+  if(Hls.isSupported()){
+    hls=new Hls({
+      maxBufferLength:60,
+      backBufferLength:120,
+      liveSyncDuration:3,
+      lowLatencyMode:true
+    });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  }else{
+    video.src=url;
+  }
+  video.play();
+  localStorage.setItem("lastChannel",index);
+  setTimeout(()=>splash.classList.add("hide"),3000);
 }
 
-/* ===== Overlay ===== */
+/* ======================================================
+   OVERLAY
+====================================================== */
 function showOverlay(){
- overlay.classList.remove("hide");
- clearTimeout(hideTimer);
- hideTimer=setTimeout(()=>overlay.classList.add("hide"),4000);
+  overlay.classList.remove("hide");
+  clearTimeout(timer);
+  timer=setTimeout(()=>overlay.classList.add("hide"),4000);
 }
 
-/* ===== Focus ===== */
+/* ======================================================
+   FOCUS
+====================================================== */
 function focus(){
- [...document.querySelectorAll(".card")].forEach(c=>c.classList.remove("active"));
- const c=list.children[index];
- if(!c)return;
- c.classList.add("active");
- c.scrollIntoView({inline:"center"});
- play(channels[index].stream);
+  [...document.querySelectorAll(".card")]
+    .forEach(c=>c.classList.remove("active"));
+  const card=list.children[index];
+  if(!card)return;
+  card.classList.add("active");
+  card.scrollIntoView({inline:"center"});
+  play(channels[index].stream);
 }
 
-/* ===== Load ===== */
-fetch(URL).then(r=>r.json()).then(d=>{
- channels=d.channels;
- channels.forEach((c,i)=>{
-  const div=document.createElement("div");
-  div.className="card";
-  div.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-  div.onclick=()=>{index=i;checkLock()};
-  list.appendChild(div);
- });
- const last=localStorage.getItem("last");
- if(last) index=parseInt(last);
- focus();
+/* ======================================================
+   LOAD CHANNELS
+====================================================== */
+fetch(DATA_URL)
+.then(r=>r.json())
+.then(d=>{
+  channels=d.channels;
+  channels.forEach((c,i)=>{
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+    div.onclick=()=>{index=i;checkLock()};
+    list.appendChild(div);
+  });
+  const last=localStorage.getItem("lastChannel");
+  if(last) index=parseInt(last);
+  focus();
 });
 
-/* ===== Lock ===== */
-function checkLock(){
- const pin=localStorage.getItem("pin");
- if(!pin){focus();return;}
- const p=prompt("🔒 أدخل الرمز");
- if(p===pin) focus();
-}
+/* ======================================================
+   LOCK
+====================================================== */
 function setPin(){
- const p=prompt("أدخل رمز جديد");
- if(p) localStorage.setItem("pin",p);
+  const p=prompt("أدخل رمز القفل");
+  if(p) localStorage.setItem("pin",p);
 }
-function clearPin(){localStorage.removeItem("pin")}
-
-/* ===== Voice Remote ===== */
-if('webkitSpeechRecognition'in window){
- const r=new webkitSpeechRecognition();
- r.lang="ar";
- r.onresult=e=>{
-  const t=e.results[0][0].transcript;
-  const i=channels.findIndex(c=>t.includes(c.name));
-  if(i>-1){index=i;focus();}
- };
- document.addEventListener("keydown",e=>{
-  if(e.key==="MediaPlayPause") r.start();
- });
+function removePin(){
+  localStorage.removeItem("pin");
+}
+function checkLock(){
+  const pin=localStorage.getItem("pin");
+  if(!pin){focus();return;}
+  const p=prompt("🔒 أدخل الرمز");
+  if(p===pin) focus();
 }
 
-/* ===== Keys ===== */
+/* ======================================================
+   VOICE REMOTE
+====================================================== */
+if("webkitSpeechRecognition" in window){
+  const r=new webkitSpeechRecognition();
+  r.lang="ar";
+  r.onresult=e=>{
+    const t=e.results[0][0].transcript;
+    const i=channels.findIndex(c=>t.includes(c.name));
+    if(i>-1){index=i;focus();}
+  };
+  document.addEventListener("keydown",e=>{
+    if(e.key==="MediaPlayPause") r.start();
+  });
+}
+
+/* ======================================================
+   INPUT
+====================================================== */
 let back=false;
 document.addEventListener("keydown",e=>{
- showOverlay();
- if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
- if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
- if(e.key==="ArrowUp") settings.style.display="block";
- if(e.key==="Backspace"){
-  if(back) closeApp();
-  back=true;setTimeout(()=>back=false,2000);
- }
+  showOverlay();
+  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
+  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
+  if(e.key==="ArrowUp") settings.style.display="block";
+  if(e.key==="Backspace"){
+    if(back) exitApp();
+    back=true;setTimeout(()=>back=false,2000);
+  }
 });
 
-/* ===== Utils ===== */
-function clearLast(){localStorage.removeItem("last")}
-function closeApp(){
- if(window.Android) Android.finish();
- else window.close();
+/* ======================================================
+   EXIT
+====================================================== */
+function clearLast(){localStorage.removeItem("lastChannel")}
+function exitApp(){
+  if(window.Android) Android.finish();
+  else window.close();
 }
 </script>
 
