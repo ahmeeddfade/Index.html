@@ -5,268 +5,164 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  width:100%;height:100%;
-  background:#000;color:#fff;
-  overflow:hidden;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#000;
+  font-family:Arial, sans-serif;
+  direction:rtl;
+  color:#fff;
 }
 
-/* ===== VIDEO ===== */
+/* Header */
+.header{
+  background:#c62828;
+  padding:14px;
+  font-size:18px;
+  font-weight:bold;
+  text-align:center;
+}
+
+/* Player */
+.player-wrap{
+  background:#000;
+}
 video{
-  position:fixed;inset:0;
-  width:100%;height:100%;
+  width:100%;
+  max-height:55vh;
+  background:#000;
+}
+
+/* Status */
+.status{
+  padding:10px;
+  font-size:14px;
+  color:#ccc;
+  background:#111;
+}
+
+/* Channels Grid */
+.channels{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:10px;
+}
+
+.card{
+  background:#111;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
+  text-align:center;
+  transition:0.2s;
+}
+
+.card:hover{
+  background:#1a1a1a;
+}
+
+.card.active{
+  outline:2px solid #c62828;
+}
+
+.card img{
+  width:100%;
+  height:90px;
   object-fit:contain;
   background:#000;
 }
 
-/* ===== SPLASH ===== */
-#splash{
-  position:fixed;inset:0;
-  background:radial-gradient(circle,#1a1a2e,#000);
-  display:flex;align-items:center;justify-content:center;
-  z-index:9999;
-  transition:.6s;
-}
-#splash.hide{opacity:0;pointer-events:none}
-#splash h1{
-  font-size:4rem;
-  background:linear-gradient(90deg,#ff6f00,#ffbb00);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-
-/* ===== OVERLAY ===== */
-.overlay{
-  position:fixed;
-  bottom:0;left:0;width:100%;
-  padding:10px 20px;
-  background:linear-gradient(to top,
-    rgba(0,0,0,.95),
-    rgba(0,0,0,.6),
-    transparent);
-  backdrop-filter:blur(20px);
-  transition:.4s;
-  z-index:5;
-}
-.overlay.hide{
-  transform:translateY(100%);
-  opacity:0;
-  pointer-events:none;
-}
-
-/* ===== CHANNELS ===== */
-.channels{
-  display:flex;
-  gap:16px;
-  align-items:center;
-  justify-content:center;
-  overflow-x:auto;
-  direction:ltr; /* ✅ من اليسار لليمين */
-  pointer-events:auto;
-}
-.channels::-webkit-scrollbar{display:none}
-
-/* ===== CARD ===== */
-.card{
-  width:180px;
-  padding:8px;
-  border-radius:16px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.08);
-  text-align:center;
-  cursor:pointer;
-  opacity:.6;
-  filter:blur(.6px);
-  transition:.3s;
-}
-.card img{
-  width:100%;
-  height:80px;
-  object-fit:contain;
-}
 .card span{
   display:block;
-  margin-top:6px;
-  font-size:13px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-/* ACTIVE */
-.card.active{
-  background:linear-gradient(135deg,#ff6f00,#ff8f00);
-  transform:scale(1.18);
-  opacity:1;
-  filter:none;
-  box-shadow:0 20px 60px rgba(255,111,0,.6);
-}
-.card.active span{
-  font-weight:700;
+  padding:8px;
   font-size:14px;
 }
-
-/* ===== HINT ===== */
-.hint{
-  position:fixed;
-  top:20px;left:30px;
-  padding:10px 22px;
-  background:rgba(0,0,0,.7);
-  border-radius:30px;
-  font-size:14px;
-  opacity:0;
-  transition:.3s;
-  z-index:6;
-}
-.hint.show{opacity:.6}
-
-/* ===== SETTINGS (HIDDEN) ===== */
-.settings{
-  position:fixed;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(0,0,0,.9);
-  padding:30px;
-  border-radius:20px;
-  display:none;
-  z-index:10;
-}
-.settings.show{display:block}
 </style>
 </head>
 
 <body>
 
-<div id="splash"><h1>ElAhmad TV</h1></div>
+<div class="header">ElAhmad TV</div>
 
-<video id="player" autoplay playsinline></video>
-
-<div class="overlay hide" id="overlay">
-  <div class="channels" id="channels"></div>
+<div class="player-wrap">
+  <video id="player" controls playsinline></video>
 </div>
 
-<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
-
-<div class="settings" id="settings">
-  <h3>الإعدادات</h3>
-  <p>نسخة تجريبية</p>
-</div>
+<div class="status" id="status">جاري تحميل القنوات...</div>
+<div class="channels" id="channels"></div>
 
 <script>
-/* ===== DATA ===== */
-const CHANNELS_URL="channels.json";
-const STORAGE_KEY="elahmad_last";
+/* رابط ملف القنوات */
+const CHANNELS_URL = "channels.json";
 
-/* ===== ELEMENTS ===== */
-const video=document.getElementById("player");
-const overlay=document.getElementById("overlay");
-const list=document.getElementById("channels");
-const splash=document.getElementById("splash");
-const hint=document.getElementById("hint");
-const settings=document.getElementById("settings");
+const video   = document.getElementById("player");
+const list    = document.getElementById("channels");
+const statusE = document.getElementById("status");
 
-let hls=null;
-let channels=[];
-let index=0;
-let hideTimer=null;
-let backCount=0;
-
-/* ===== LOAD ===== */
-fetch(CHANNELS_URL).then(r=>r.json()).then(data=>{
-  channels=data.channels;
-  const saved=localStorage.getItem(STORAGE_KEY);
-  if(saved) index=parseInt(saved)||0;
-
-  channels.forEach((c,i)=>{
-    const d=document.createElement("div");
-    d.className="card";
-    d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-    d.onclick=()=>{index=i;focus()};
-    list.appendChild(d);
-  });
-
-  focus();
-  showOverlay();
-});
-
-/* ===== PLAYER ===== */
-function play(url){
-  if(hls){hls.destroy();hls=null}
-  if(Hls.isSupported()){
-    hls=new Hls({lowLatencyMode:true});
-    hls.loadSource(url);
-    hls.attachMedia(video);
-  }else video.src=url;
-
-  video.play().catch(()=>{});
-  setTimeout(()=>splash.classList.add("hide"),3000);
-}
-
-/* ===== UI ===== */
-function focus(){
-  [...list.children].forEach(c=>c.classList.remove("active"));
-  const card=list.children[index];
-  if(card){
-    card.classList.add("active");
-    card.scrollIntoView({inline:"center"});
-    play(channels[index].stream);
-    localStorage.setItem(STORAGE_KEY,index);
-  }
-}
-function showOverlay(){
-  overlay.classList.remove("hide");
-  hint.classList.add("show");
-  clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>{
-    overlay.classList.add("hide");
-    hint.classList.remove("show");
-  },5000);
-}
-
-/* ===== REMOTE ===== */
-document.addEventListener("keydown",e=>{
-  switch(e.key){
-    case"ArrowRight":index=(index+1)%channels.length;focus();showOverlay();break;
-    case"ArrowLeft":index=(index-1+channels.length)%channels.length;focus();showOverlay();break;
-    case"ArrowUp":showOverlay();break;
-    case"Enter":showOverlay();break;
-    case"Escape":
-      backCount++;
-      if(backCount>=2){
-        if(hls)hls.destroy();
-        video.pause();
-        window.close();
-      }else{
-        hint.textContent="اضغط مرة أخرى للخروج";
-        hint.classList.add("show");
-        setTimeout(()=>backCount=0,2000);
-      }
-      break;
-  }
-});
-
-/* ===== VOICE ===== */
-if("webkitSpeechRecognition"in window){
-  const rec=new webkitSpeechRecognition();
-  rec.lang="ar";
-  rec.onresult=e=>{
-    const t=e.results[0][0].transcript;
-    const i=channels.findIndex(c=>
-      t.includes(c.name) ||
-      (t.includes("رياض") && c.category==="sports") ||
-      (t.includes("خبر") && c.category==="news")
-    );
-    if(i>-1){index=i;focus();showOverlay();}
-  };
-  document.addEventListener("keydown",e=>{
-    if(e.key==="MediaSearch") rec.start();
+/* تشغيل البث */
+function playStream(url){
+  video.src = url;
+  video.load();
+  video.play().catch(()=>{
+    statusE.textContent = "فشل تشغيل القناة";
   });
 }
+
+/* تحميل القنوات */
+fetch(CHANNELS_URL)
+.then(res=>{
+  if(!res.ok) throw new Error("HTTP Error");
+  return res.json();
+})
+.then(data=>{
+  if(!data.channels || data.channels.length === 0){
+    statusE.textContent = "لا توجد قنوات";
+    return;
+  }
+
+  statusE.textContent = "اختر قناة للتشغيل";
+
+  data.channels.forEach(ch=>{
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const img = document.createElement("img");
+    img.src = ch.logo || "https://via.placeholder.com/300x150?text=TV";
+
+    const name = document.createElement("span");
+    name.textContent = ch.name;
+
+    card.appendChild(img);
+    card.appendChild(name);
+
+    card.onclick = ()=>{
+      document.querySelectorAll(".card")
+        .forEach(c=>c.classList.remove("active"));
+
+      card.classList.add("active");
+      statusE.textContent = "جاري تشغيل: " + ch.name;
+      playStream(ch.stream);
+    };
+
+    list.appendChild(card);
+  });
+})
+.catch(err=>{
+  console.error(err);
+  statusE.textContent = "خطأ في تحميل ملف القنوات";
+});
+
+/* أحداث المشغّل */
+video.addEventListener("playing", ()=>{
+  statusE.textContent = "يعمل الآن ✔";
+});
+
+video.addEventListener("error", ()=>{
+  statusE.textContent = "خطأ في البث (قد يكون الرابط محمي)";
+});
 </script>
+
 </body>
 </html>
