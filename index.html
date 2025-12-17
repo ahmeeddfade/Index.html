@@ -2,1480 +2,164 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>ElAhmad TV - 📺 التلفزيون الذكي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElAhmad TV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
 
 <style>
-/* ===== RESET & BASE ===== */
-* { 
-  box-sizing: border-box; 
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ===== RESET ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;height:100%;
+  background:#000;color:#fff;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  background: #000;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, Oxygen, Ubuntu, sans-serif;
-  color: #fff;
-  user-select: none;
-  touch-action: manipulation;
+/* ===== SPLASH ===== */
+#splash{
+  position:fixed;inset:0;
+  background:radial-gradient(circle,#1a1a2e,#000);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;
+  transition:.6s;
+}
+#splash.hide{opacity:0;pointer-events:none}
+#splash h1{
+  font-size:4rem;
+  background:linear-gradient(90deg,#ff6f00,#ffbb00);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
 
-/* ===== شاشة الترحيب (SPLASH) ===== */
-#splash {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, 
-    #0a0a0a 0%, 
-    #1a1a1a 25%, 
-    #2a1a1a 50%, 
-    #1a1a2e 75%, 
-    #0a0a1a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 99999;
-  opacity: 1;
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+/* ===== VIDEO ===== */
+#player{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  object-fit:contain;
+  background:#000;
+  z-index:1;
 }
 
-#splash.fade-out {
-  opacity: 0;
-  pointer-events: none;
+/* ===== HINT ===== */
+.hint{
+  position:fixed;top:20px;left:30px;
+  padding:10px 22px;
+  border-radius:30px;
+  background:rgba(0,0,0,.7);
+  font-size:14px;
+  opacity:0;
+  transition:.3s;
+  z-index:5;
 }
+.overlay:not(.hide) ~ .hint{opacity:.6}
 
-.splash-container {
-  text-align: center;
-  animation: splash-float 3.5s ease-in-out infinite;
-  position: relative;
-  padding: 60px 80px;
-  border-radius: 32px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(40px);
-  border: 1px solid rgba(255, 111, 0, 0.3);
-  box-shadow: 
-    0 30px 80px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-.splash-logo {
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 30px;
-  background: linear-gradient(135deg, #ff6f00 0%, #ff8f00 50%, #ff6f00 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 4rem;
-  animation: 
-    splash-rotate 15s linear infinite,
-    splash-glow 2s ease-in-out infinite alternate;
-  position: relative;
-  overflow: hidden;
-}
-
-.splash-logo::before {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.splash-logo::after {
-  content: '📺';
-  position: relative;
-  z-index: 2;
-  filter: drop-shadow(0 0 10px rgba(255, 111, 0, 0.5));
-}
-
-.splash-title {
-  font-size: 4.5rem;
-  margin-bottom: 1.5rem;
-  background: linear-gradient(90deg, 
-    #ff6f00 0%, 
-    #ff8f00 25%, 
-    #ffbb00 50%, 
-    #ff8f00 75%, 
-    #ff6f00 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-flow 3s linear infinite;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-shadow: 0 5px 30px rgba(255, 111, 0, 0.3);
-  position: relative;
-}
-
-.splash-subtitle {
-  font-size: 1.8rem;
-  opacity: 0.9;
-  margin-top: 0.5rem;
-  animation: subtitle-pulse 2.5s infinite;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 300;
-}
-
-.splash-progress {
-  width: 300px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  margin: 40px auto 0;
-  overflow: hidden;
-  position: relative;
-}
-
-.splash-progress-bar {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #ff6f00, #ffbb00);
-  border-radius: 2px;
-  width: 0%;
-  animation: progress-load 3s ease-in-out forwards;
-}
-
-@keyframes splash-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-20px) scale(1.02); }
-}
-
-@keyframes splash-rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes splash-glow {
-  0% { box-shadow: 0 0 30px rgba(255, 111, 0, 0.3); }
-  100% { box-shadow: 0 0 60px rgba(255, 111, 0, 0.7); }
-}
-
-@keyframes gradient-flow {
-  0% { background-position: 0% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes subtitle-pulse {
-  0%, 100% { opacity: 0.9; }
-  50% { opacity: 1; }
-}
-
-@keyframes progress-load {
-  0% { width: 0%; }
-  100% { width: 100%; }
-}
-
-/* ===== الفيديو الرئيسي ===== */
-#player {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #000;
-  z-index: 1;
-}
-
-/* ===== النص الإرشادي (HINT) - مخفي إلا عند الحاجة ===== */
-.hint {
-  position: fixed;
-  top: 25px;
-  left: 30px;
-  font-size: 15px;
-  opacity: 0;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 10;
-  background: rgba(0, 0, 0, 0.85);
-  padding: 12px 24px;
-  border-radius: 30px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  pointer-events: none;
-  transform: translateY(-10px);
-}
-
-.hint.show {
-  opacity: 0.8;
-  transform: translateY(0);
-}
-
-.hint-icon {
-  font-size: 18px;
-  opacity: 0.9;
-}
-
-/* ===== شريط القنوات (OVERLAY) - أصغر وأكثر نحافة ===== */
-.overlay {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 8px 15px; /* ✅ أصغر وأكثر نحافة */
-  background: linear-gradient(to top, 
-    rgba(0, 0, 0, 0.98) 0%, 
-    rgba(0, 0, 0, 0.92) 15%, 
-    rgba(0, 0, 0, 0.85) 30%, 
-    transparent 100%);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 5;
-  display: flex;
-  justify-content: center;
-  backdrop-filter: blur(15px) saturate(180%);
-  border-top: 1px solid rgba(255, 111, 0, 0.15);
-  transform: translateY(0);
-  height: 140px; /* ✅ ارتفاع ثابت أصغر */
-}
-
-.overlay.hide {
-  opacity: 0;
-  transform: translateY(100%);
-  pointer-events: none;
-}
-
-/* ===== حاوية القنوات ===== */
-.channels-container {
-  width: 100%;
-  max-width: 95%;
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-/* ===== شريط التمرير العلوي ===== */
-.scroll-indicator {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 180px;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255, 111, 0, 0.5), 
-    rgba(255, 111, 0, 0.8), 
-    rgba(255, 111, 0, 0.5), 
+/* ===== OVERLAY ===== */
+.overlay{
+  position:fixed;
+  bottom:0;left:0;width:100%;
+  padding:8px 20px;
+  background:linear-gradient(to top,
+    rgba(0,0,0,.95),
+    rgba(0,0,0,.7),
     transparent);
-  border-radius: 3px;
-  animation: indicator-glow 2s infinite;
-  opacity: 0.7;
+  backdrop-filter:blur(20px);
+  transition:.4s;
+  z-index:4;
+}
+.overlay.hide{
+  transform:translateY(100%);
+  opacity:0;
+  pointer-events:none;
 }
 
-@keyframes indicator-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.9; }
+/* ===== CHANNELS ===== */
+.channels{
+  display:flex;
+  gap:14px;
+  justify-content:center;
+  align-items:center;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.channels::-webkit-scrollbar{display:none}
+
+/* ===== CARD ===== */
+.card{
+  width:180px;
+  padding:8px;
+  border-radius:16px;
+  background:rgba(255,255,255,.06);
+  text-align:center;
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(15px);
+  opacity:.6;
+  filter:blur(.6px);
+  transition:.35s;
+}
+.card img{
+  width:100%;
+  height:80px;
+  object-fit:contain;
+}
+.card span{
+  display:block;
+  margin-top:6px;
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-/* ===== قائمة القنوات ===== */
-.channels {
-  display: flex;
-  gap: 12px; /* ✅ مسافة أقل بين الكروت */
-  align-items: center;
-  justify-content: center;
-  overflow-x: auto;
-  padding: 8px 0;
-  scrollbar-width: none;
-  direction: ltr;
-  scroll-behavior: smooth;
-  position: relative;
-  height: 100%;
-  width: 100%;
+/* ===== ACTIVE ===== */
+.card.active{
+  background:linear-gradient(135deg,#ff6f00,#ff8f00);
+  transform:scale(1.18);
+  opacity:1;
+  filter:none;
+  box-shadow:0 20px 60px rgba(255,111,0,.6);
+}
+.card.active span{
+  font-size:14px;
+  font-weight:700;
 }
 
-.channels::-webkit-scrollbar {
-  display: none;
+/* ===== LOADING ===== */
+.loading{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:6;
 }
-
-/* ===== كروت القنوات - تصميم أصغر وأنحف ===== */
-.card {
-  width: 160px; /* ✅ أصغر بكثير */
-  padding: 8px; /* ✅ نحيف جداً */
-  border-radius: 14px; /* ✅ زوايا أصغر */
-  background: rgba(255, 255, 255, 0.05); /* ✅ إزالة الـ blur */
-  text-align: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  direction: rtl;
-  position: relative;
-  overflow: hidden;
-  opacity: 0.85;
-  height: 110px; /* ✅ ارتفاع أصغر */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-5px);
-  border-color: rgba(255, 111, 0, 0.4);
-  opacity: 0.95;
-  box-shadow: 
-    0 10px 25px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 111, 0, 0.2);
-}
-
-.card-image-container {
-  width: 100%;
-  height: 60px; /* ✅ صورة أصغر */
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin-bottom: 8px;
-  position: relative;
-}
-
-.card img {
-  width: 85%;
-  height: 85%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-  transition: transform 0.3s ease;
-}
-
-.card:hover img {
-  transform: scale(1.05);
-}
-
-.card span {
-  display: block;
-  font-size: 13px; /* ✅ نص أصغر */
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 3px;
-  line-height: 1.3;
-  transition: all 0.3s ease;
-}
-
-/* ===== القناة النشطة - برتقالي لامع بدون blur ===== */
-.card.active {
-  background: linear-gradient(135deg, 
-    rgba(255, 111, 0, 0.95) 0%, 
-    rgba(255, 143, 0, 0.95) 100%);
-  transform: scale(1.08); /* ✅ تكبير معتدل */
-  border-color: rgba(255, 255, 255, 0.3);
-  opacity: 1;
-  box-shadow: 
-    0 15px 40px rgba(255, 111, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    inset 0 1px 10px rgba(255, 255, 255, 0.2);
-  z-index: 2;
-  animation: active-pulse 2s infinite;
-}
-
-.card.active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15) 0%, 
-    transparent 50%);
-  border-radius: 14px;
-}
-
-.card.active .card-image-container {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.card.active span {
-  color: white;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  font-size: 13px; /* ✅ نفس حجم النص */
-}
-
-@keyframes active-pulse {
-  0%, 100% { box-shadow: 0 15px 40px rgba(255, 111, 0, 0.5); }
-  50% { box-shadow: 0 15px 50px rgba(255, 111, 0, 0.6); }
-}
-
-/* ===== مؤشر القناة الحالية - محسّن ===== */
-.current-channel {
-  position: fixed;
-  top: 25px;
-  right: 30px;
-  background: rgba(0, 0, 0, 0.9);
-  padding: 10px 20px;
-  border-radius: 25px;
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 111, 0, 0.4);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.4s ease;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-}
-
-.current-channel.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.current-channel-logo {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
-}
-
-.current-channel-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  direction: rtl;
-}
-
-/* ===== مؤشر التحميل ===== */
-.loading {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.9);
-  padding: 25px 35px;
-  border-radius: 18px;
-  display: none;
-  backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
-  text-align: center;
-  min-width: 180px;
-}
-
-.loading.show {
-  display: block;
-  animation: loading-appear 0.3s ease;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid #ff6f00;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 15px;
-}
-
-.loading p {
-  font-size: 16px;
-  opacity: 0.9;
-  font-weight: 500;
-}
-
-@keyframes loading-appear {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* ===== تنبيه الخروج ===== */
-.exit-confirm {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  backdrop-filter: blur(30px);
-}
-
-.exit-confirm.show {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.exit-box {
-  background: rgba(30, 30, 30, 0.95);
-  padding: 35px;
-  border-radius: 25px;
-  text-align: center;
-  max-width: 450px;
-  width: 90%;
-  border: 1px solid rgba(255, 111, 0, 0.3);
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
-  transform: scale(0.9);
-  transition: transform 0.3s ease;
-}
-
-.exit-confirm.show .exit-box {
-  transform: scale(1);
-}
-
-.exit-title {
-  font-size: 26px;
-  margin-bottom: 15px;
-  color: #ff6f00;
-  font-weight: 700;
-}
-
-.exit-message {
-  font-size: 17px;
-  margin-bottom: 25px;
-  opacity: 0.9;
-  line-height: 1.5;
-}
-
-.exit-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-}
-
-.exit-btn {
-  padding: 12px 35px;
-  border-radius: 12px;
-  font-size: 17px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  min-width: 140px;
-}
-
-.exit-btn.cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-.exit-btn.cancel:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-}
-
-.exit-btn.confirm {
-  background: linear-gradient(90deg, #ff6f00, #ff8f00);
-  color: white;
-}
-
-.exit-btn.confirm:hover {
-  background: linear-gradient(90deg, #ff8f00, #ff6f00);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
-}
-
-/* ===== تحسينات للتلفاز الذكي ===== */
-@media (min-width: 1600px) {
-  .overlay {
-    height: 150px;
-    padding: 10px 20px;
-  }
-  
-  .card {
-    width: 180px;
-    height: 120px;
-  }
-  
-  .card-image-container {
-    height: 70px;
-  }
-  
-  .card span {
-    font-size: 14px;
-  }
-  
-  .current-channel {
-    padding: 12px 25px;
-  }
-  
-  .current-channel-logo {
-    width: 35px;
-    height: 35px;
-  }
-  
-  .current-channel-name {
-    font-size: 16px;
-  }
-}
-
-@media (min-width: 1920px) {
-  .overlay {
-    padding: 12px 25px;
-    height: 160px;
-  }
-  
-  .channels {
-    gap: 15px;
-  }
-  
-  .card {
-    width: 200px;
-    height: 130px;
-  }
-  
-  .card-image-container {
-    height: 75px;
-  }
-  
-  .card span {
-    font-size: 15px;
-  }
-  
-  .current-channel {
-    right: 40px;
-    top: 30px;
-  }
-}
-
-/* ===== تحسينات للشاشات الصغيرة ===== */
-@media (max-width: 768px) {
-  .splash-container {
-    padding: 40px;
-    margin: 20px;
-  }
-  
-  .splash-title {
-    font-size: 3rem;
-  }
-  
-  .splash-subtitle {
-    font-size: 1.4rem;
-  }
-  
-  .splash-logo {
-    width: 100px;
-    height: 100px;
-    font-size: 3rem;
-  }
-  
-  .card {
-    width: 140px;
-    height: 100px;
-  }
-  
-  .card-image-container {
-    height: 50px;
-  }
-  
-  .card span {
-    font-size: 12px;
-  }
-  
-  .current-channel {
-    right: 15px;
-    padding: 8px 15px;
-    top: 15px;
-  }
-  
-  .current-channel-logo {
-    width: 25px;
-    height: 25px;
-  }
-  
-  .current-channel-name {
-    font-size: 13px;
-  }
-  
-  .hint {
-    left: 15px;
-    padding: 10px 18px;
-    font-size: 13px;
-  }
-}
-
-/* ===== أنميشن إضافية ===== */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* ===== تأثيرات خاصة للتلفاز ===== */
-.tv-focus-effect {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 60%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
-}
-
-/* ===== تحسينات الأداء ===== */
-.performance-optimized {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000;
+.loading.show{display:flex}
+.loading div{
+  padding:20px 30px;
+  background:rgba(0,0,0,.7);
+  border-radius:20px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- شاشة الترحيب -->
-<div id="splash">
-  <div class="splash-container">
-    <div class="splash-logo"></div>
-    <h1 class="splash-title">ElAhmad TV</h1>
-    <p class="splash-subtitle">التجربة التلفزيونية الذكية</p>
-    <div class="splash-progress">
-      <div class="splash-progress-bar"></div>
-    </div>
-  </div>
-</div>
+<div id="splash"><h1>ElAhmad TV</h1></div>
 
-<!-- مؤشر التحميل -->
 <div class="loading" id="loading">
-  <div class="loading-spinner"></div>
-  <p id="loadingText">جاري تحميل القناة...</p>
+  <div>جاري التحميل…</div>
 </div>
 
-<!-- الفيديو الرئيسي -->
 <video id="player" autoplay playsinline></video>
 
-<!-- النص الإرشادي -->
-<div class="hint" id="hint">
-  <span class="hint-icon">🎮</span>
-  <span id="hintText">استخدم الأسهم أو اللمس للتحكم</span>
-</div>
-
-<!-- مؤشر القناة الحالية -->
-<div class="current-channel" id="currentChannel">
-  <img class="current-channel-logo" id="currentChannelLogo" src="" alt="">
-  <span class="current-channel-name" id="currentChannelName"></span>
-</div>
-
-<!-- تنبيه تأكيد الخروج -->
-<div class="exit-confirm" id="exitConfirm">
-  <div class="exit-box">
-    <h2 class="exit-title">هل تريد الخروج؟</h2>
-    <p class="exit-message">سيتم حفظ القناة الحالية تلقائياً<br>يمكنك العودة واستئناف المشاهدة</p>
-    <div class="exit-buttons">
-      <button class="exit-btn cancel" id="exitCancel">إلغاء</button>
-      <button class="exit-btn confirm" id="exitConfirmBtn">خروج</button>
-    </div>
-  </div>
-</div>
-
-<!-- قائمة القنوات -->
 <div class="overlay hide" id="overlay">
-  <div class="scroll-indicator"></div>
-  <div class="channels-container">
-    <div class="channels" id="channels"></div>
-  </div>
+  <div class="channels" id="channels"></div>
 </div>
 
-<script>
-// ===== متغيرات التطبيق =====
-const video = document.getElementById('player');
-const overlay = document.getElementById('overlay');
-const channelsList = document.getElementById('channels');
-const splash = document.getElementById('splash');
-const loading = document.getElementById('loading');
-const hint = document.getElementById('hint');
-const currentChannel = document.getElementById('currentChannel');
-const currentChannelLogo = document.getElementById('currentChannelLogo');
-const currentChannelName = document.getElementById('currentChannelName');
-const exitConfirm = document.getElementById('exitConfirm');
-const loadingText = document.getElementById('loadingText');
-const hintText = document.getElementById('hintText');
+<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
-let hls = null;
-let currentIndex = 0;
-let hideOverlayTimer = null;
-let showHintTimer = null;
-let hideCurrentChannelTimer = null;
-let channels = [];
-let splashHidden = false;
-let exitAttempts = 0;
-const CHANNELS_URL = 'channels.json';
-const STORAGE_KEY = 'elahmad_tv_last_state';
-const MAX_EXIT_ATTEMPTS = 2;
-
-// ===== تهيئة التطبيق =====
-function initApp() {
-  loadAppState();
-  setupEventListeners();
-  loadChannels();
-  
-  // إخفاء الشاشة الترحيبية بعد 8 ثوان إذا لم يتم تشغيل قناة
-  setTimeout(() => {
-    if (!splashHidden) {
-      hideSplashScreen();
-    }
-  }, 8000);
-}
-
-// ===== تحميل حالة التطبيق السابقة =====
-function loadAppState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const state = JSON.parse(saved);
-      if (state.lastChannel !== undefined) {
-        currentIndex = state.lastChannel;
-      }
-      if (state.volume !== undefined) {
-        video.volume = state.volume;
-      }
-    }
-  } catch (e) {
-    console.warn('لا يمكن تحميل الحالة السابقة:', e);
-  }
-}
-
-// ===== حفظ حالة التطبيق =====
-function saveAppState() {
-  try {
-    const state = {
-      lastChannel: currentIndex,
-      lastUpdate: Date.now(),
-      volume: video.volume,
-      muted: video.muted
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (e) {
-    console.warn('لا يمكن حفظ الحالة:', e);
-  }
-}
-
-// ===== تحميل القنوات =====
-function loadChannels() {
-  fetch(CHANNELS_URL)
-    .then(response => {
-      if (!response.ok) throw new Error(`خطأ ${response.status}`);
-      return response.json();
-    })
-    .then(data => {
-      channels = data.channels || [];
-      renderChannels();
-      
-      // استعادة القناة الأخيرة
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const state = JSON.parse(saved);
-          if (state.lastChannel !== undefined && channels[state.lastChannel]) {
-            selectChannel(state.lastChannel, false);
-            return;
-          }
-        }
-      } catch (e) {}
-      
-      // القناة الأولى إذا لم توجد سابقة
-      if (channels.length > 0) {
-        selectChannel(0, false);
-      }
-    })
-    .catch(error => {
-      console.error('خطأ تحميل القنوات:', error);
-      showError('تعذر تحميل القنوات. تأكد من اتصال الإنترنت.');
-    });
-}
-
-// ===== عرض القنوات =====
-function renderChannels() {
-  channelsList.innerHTML = '';
-  
-  channels.forEach((channel, index) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.dataset.index = index;
-    card.tabIndex = 0;
-    card.setAttribute('role', 'button');
-    card.setAttribute('aria-label', `قناة ${channel.name}`);
-    
-    card.innerHTML = `
-      <div class="card-image-container">
-        <img src="${channel.logo}" alt="${channel.name}" loading="lazy">
-      </div>
-      <span>${channel.name}</span>
-    `;
-    
-    card.addEventListener('click', () => selectChannel(index));
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectChannel(index);
-      }
-    });
-    
-    channelsList.appendChild(card);
-  });
-}
-
-// ===== اختيار قناة =====
-function selectChannel(index, showOverlay = true) {
-  if (index < 0 || index >= channels.length) return;
-  
-  currentIndex = index;
-  const channel = channels[index];
-  
-  // تحديث الواجهة
-  updateActiveCard();
-  updateCurrentChannelIndicator(channel);
-  
-  if (showOverlay) {
-    showOverlayWithTimeout();
-  }
-  
-  // تشغيل القناة
-  playChannel(channel.stream);
-  
-  // حفظ الحالة
-  saveAppState();
-}
-
-// ===== تحديث الكارت النشط =====
-function updateActiveCard() {
-  document.querySelectorAll('.card').forEach((card, index) => {
-    if (index === currentIndex) {
-      card.classList.add('active');
-      // تمرير إلى المنتصف
-      card.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
-    } else {
-      card.classList.remove('active');
-    }
-  });
-}
-
-// ===== تحديث مؤشر القناة الحالية =====
-function updateCurrentChannelIndicator(channel) {
-  currentChannelLogo.src = channel.logo;
-  currentChannelLogo.alt = channel.name;
-  currentChannelName.textContent = channel.name;
-  
-  // إظهار المؤشر
-  currentChannel.classList.add('show');
-  
-  // إخفاء بعد 3 ثوان
-  clearTimeout(hideCurrentChannelTimer);
-  hideCurrentChannelTimer = setTimeout(() => {
-    currentChannel.classList.remove('show');
-  }, 3000);
-}
-
-// ===== تشغيل القناة =====
-function playChannel(streamUrl) {
-  // إظهار مؤشر التحميل
-  loadingText.textContent = 'جاري تحميل القناة...';
-  loading.classList.add('show');
-  
-  // إيقاف HLS السابق
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
-  
-  // إعدادات HLS محسنة للتلفاز الذكي
-  const hlsConfig = {
-    enableWorker: true,
-    lowLatencyMode: true,
-    backBufferLength: 50,
-    maxBufferLength: 25,
-    maxBufferSize: 50 * 1000 * 1000,
-    maxFragLookUpTolerance: 0.2,
-    liveSyncDurationCount: 3,
-    liveMaxLatencyDurationCount: 8,
-    abrEwmaFastLive: 2.5,
-    abrEwmaSlowLive: 8,
-    startFragPrefetch: true,
-    testBandwidth: true,
-    fpsDroppedMonitoringThreshold: 0.15,
-    fpsDroppedMonitoringPeriod: 3000,
-    manifestLoadingTimeOut: 10000,
-    manifestLoadingMaxRetry: 3,
-    manifestLoadingRetryDelay: 1000,
-    levelLoadingTimeOut: 10000,
-    levelLoadingMaxRetry: 4,
-    levelLoadingRetryDelay: 1000,
-    fragLoadingTimeOut: 20000,
-    fragLoadingMaxRetry: 6,
-    fragLoadingRetryDelay: 1000
-  };
-  
-  // تشغيل HLS إذا مدعوم
-  if (Hls.isSupported()) {
-    hls = new Hls(hlsConfig);
-    
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      loading.classList.remove('show');
-      
-      // إخفاء شاشة الترحيب بعد 3 ثوان من أول تشغيل
-      if (!splashHidden) {
-        setTimeout(hideSplashScreen, 3000);
-      }
-      
-      video.play().catch(() => {
-        // لا نعرض أي رسائل، فقط نترك الفيديو
-      });
-    });
-    
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      console.error('خطأ HLS:', data);
-      handleStreamError(data);
-    });
-    
-    hls.loadSource(streamUrl);
-    hls.attachMedia(video);
-  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = streamUrl;
-    loading.classList.remove('show');
-    
-    if (!splashHidden) {
-      setTimeout(hideSplashScreen, 3000);
-    }
-    
-    video.play().catch(() => {
-      // لا نعرض أي رسائل
-    });
-  }
-  
-  // تشغيل الصوت
-  video.muted = false;
-  video.volume = 1;
-}
-
-// ===== إخفاء شاشة الترحيب =====
-function hideSplashScreen() {
-  splash.classList.add('fade-out');
-  setTimeout(() => {
-    splash.style.display = 'none';
-    splashHidden = true;
-    showHintTemporarily();
-  }, 800);
-}
-
-// ===== إظهار النص الإرشادي مؤقتاً =====
-function showHintTemporarily() {
-  hint.classList.add('show');
-  clearTimeout(showHintTimer);
-  showHintTimer = setTimeout(() => {
-    hint.classList.remove('show');
-  }, 5000);
-}
-
-// ===== إظهار/إخفاء القائمة =====
-function showOverlayWithTimeout() {
-  overlay.classList.remove('hide');
-  showHintTemporarily();
-  
-  clearTimeout(hideOverlayTimer);
-  hideOverlayTimer = setTimeout(() => {
-    overlay.classList.add('hide');
-  }, 5000);
-}
-
-// ===== معالجة أخطاء البث =====
-function handleStreamError(error) {
-  loadingText.textContent = 'إعادة المحاولة...';
-  
-  setTimeout(() => {
-    if (channels[currentIndex]) {
-      playChannel(channels[currentIndex].stream);
-    }
-  }, 3000);
-}
-
-// ===== إظهار رسالة خطأ =====
-function showError(message) {
-  const errorDiv = document.createElement('div');
-  errorDiv.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    background: rgba(255, 50, 50, 0.95);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 12px;
-    backdrop-filter: blur(20px);
-    z-index: 1000;
-    text-align: center;
-    font-weight: 500;
-    animation: slide-in-right 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  `;
-  errorDiv.textContent = message;
-  document.body.appendChild(errorDiv);
-  
-  setTimeout(() => {
-    errorDiv.style.animation = 'slide-in-right 0.3s ease reverse';
-    setTimeout(() => errorDiv.remove(), 300);
-  }, 5000);
-}
-
-// ===== معالجة زر الخلف =====
-function handleBackButton() {
-  if (!overlay.classList.contains('hide')) {
-    overlay.classList.add('hide');
-    return true;
-  }
-  
-  exitAttempts++;
-  if (exitAttempts >= MAX_EXIT_ATTEMPTS) {
-    showExitConfirm();
-    exitAttempts = 0;
-    return true;
-  } else {
-    showHintTemporarily();
-    hintText.textContent = `اضغط مرة أخرى للخروج (${MAX_EXIT_ATTEMPTS - exitAttempts})`;
-    setTimeout(() => {
-      exitAttempts = 0;
-      hintText.textContent = 'استخدم الأسهم أو اللمس للتحكم';
-    }, 2000);
-    return true;
-  }
-}
-
-// ===== إظهار تأكيد الخروج =====
-function showExitConfirm() {
-  exitConfirm.classList.add('show');
-}
-
-// ===== إعداد مستمعي الأحداث =====
-function setupEventListeners() {
-  // التحكم باللوحة
-  document.addEventListener('keydown', (e) => {
-    e.preventDefault();
-    
-    switch(e.key) {
-      case 'ArrowRight':
-        selectChannel((currentIndex + 1) % channels.length);
-        break;
-      case 'ArrowLeft':
-        selectChannel((currentIndex - 1 + channels.length) % channels.length);
-        break;
-      case 'ArrowUp':
-      case 'ArrowDown':
-        showOverlayWithTimeout();
-        break;
-      case ' ':
-        if (video.paused) {
-          video.play();
-        } else {
-          video.pause();
-        }
-        showOverlayWithTimeout();
-        break;
-      case 'm':
-      case 'M':
-        video.muted = !video.muted;
-        showOverlayWithTimeout();
-        break;
-      case 'Escape':
-        if (!handleBackButton()) {
-          showExitConfirm();
-        }
-        break;
-      case 'Enter':
-        if (document.activeElement.classList.contains('card')) {
-          const index = parseInt(document.activeElement.dataset.index);
-          selectChannel(index);
-        }
-        break;
-      case '+':
-      case '=':
-        if (video.volume < 1) {
-          video.volume = Math.min(1, video.volume + 0.1);
-        }
-        break;
-      case '-':
-      case '_':
-        if (video.volume > 0) {
-          video.volume = Math.max(0, video.volume - 0.1);
-        }
-        break;
-      case 'f':
-      case 'F':
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
-        } else {
-          document.exitFullscreen();
-        }
-        break;
-    }
-  });
-  
-  // التحكم باللمس
-  let touchStartX = 0;
-  let touchStartY = 0;
-  document.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    showOverlayWithTimeout();
-  });
-  
-  document.addEventListener('touchend', (e) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-    
-    // تجاهل التمرير العمودي
-    if (Math.abs(diffY) < Math.abs(diffX) && Math.abs(diffX) > 50) {
-      if (diffX > 0) {
-        selectChannel((currentIndex - 1 + channels.length) % channels.length);
-      } else {
-        selectChannel((currentIndex + 1) % channels.length);
-      }
-    }
-  });
-  
-  // الماوس
-  document.addEventListener('mousemove', () => {
-    if (overlay.classList.contains('hide')) {
-      showOverlayWithTimeout();
-    }
-  });
-  
-  // النقر على الفيديو للتشغيل/الإيقاف
-  video.addEventListener('click', () => {
-    if (video.paused) {
-      video.play();
-    } else {
-      video.pause();
-    }
-    showOverlayWithTimeout();
-  });
-  
-  // تغيير حجم الصوت مع الفيديو
-  video.addEventListener('volumechange', saveAppState);
-  
-  // تأكيد الخروج
-  document.getElementById('exitCancel').addEventListener('click', () => {
-    exitConfirm.classList.remove('show');
-  });
-  
-  document.getElementById('exitConfirmBtn').addEventListener('click', () => {
-    saveAppState();
-    if (hls) hls.destroy();
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    }
-    window.close();
-  });
-  
-  // منع إعادة تحميل الصفحة
-  window.addEventListener('beforeunload', (e) => {
-    saveAppState();
-    e.preventDefault();
-    e.returnValue = '';
-  });
-  
-  // استجابة زر الخلف في الهواتف
-  window.addEventListener('popstate', () => {
-    if (!handleBackButton()) {
-      history.pushState(null, '', window.location.pathname);
-    }
-  });
-  
-  history.pushState(null, '', window.location.pathname);
-  
-  // التمرير في قائمة القنوات
-  channelsList.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    channelsList.scrollLeft += e.deltaY;
-  });
-  
-  // التحكم في الصوت بالنقر المزدوج
-  let lastClickTime = 0;
-  video.addEventListener('click', (e) => {
-    const currentTime = new Date().getTime();
-    const timeSinceLastClick = currentTime - lastClickTime;
-    
-    if (timeSinceLastClick < 300) { // نقر مزدوج
-      video.muted = !video.muted;
-      showOverlayWithTimeout();
-    }
-    
-    lastClickTime = currentTime;
-  });
-}
-
-// ===== بدء التطبيق =====
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
-
-// ===== تحسينات متقدمة للتلفاز الذكي =====
-if (navigator.userAgent.includes('TV') || 
-    navigator.userAgent.includes('Android TV') || 
-    navigator.userAgent.includes('Google TV') ||
-    navigator.userAgent.includes('SmartTV') ||
-    /TV|Tizen|webOS|NetCast|Boxee|Kylo|Roku|XBMC|Xbox|PLAYSTATION/i.test(navigator.userAgent)) {
-  
-  document.body.classList.add('tv-mode', 'performance-optimized');
-  document.documentElement.style.fontSize = '24px';
-  
-  // تحسينات خاصة للتلفاز
-  const style = document.createElement('style');
-  style.textContent = `
-    .tv-mode .overlay {
-      height: 170px;
-      padding: 15px 25px;
-    }
-    .tv-mode .card {
-      width: 220px;
-      height: 140px;
-    }
-    .tv-mode .card-image-container {
-      height: 80px;
-    }
-    .tv-mode .card span {
-      font-size: 16px;
-    }
-    .tv-mode .hint {
-      font-size: 20px;
-      padding: 15px 30px;
-      left: 40px;
-    }
-    .tv-mode .current-channel {
-      right: 40px;
-      top: 30px;
-      padding: 15px 30px;
-    }
-    .tv-mode .current-channel-logo {
-      width: 40px;
-      height: 40px;
-    }
-    .tv-mode .current-channel-name {
-      font-size: 18px;
-    }
-    .tv-mode video {
-      image-rendering: crisp-edges;
-    }
-  `;
-  document.head.appendChild(style);
-  
-  // إضافة تأثيرات خاصة للتلفاز
-  const tvEffect = document.createElement('div');
-  tvEffect.className = 'tv-focus-effect';
-  document.body.appendChild(tvEffect);
-}
-
-// ===== إدارة الذاكرة والتحسينات =====
-let cleanupInterval = setInterval(() => {
-  if (hls && hls.media && hls.media.buffered.length > 0) {
-    const currentTime = hls.media.currentTime;
-    const bufferEnd = hls.media.buffered.end(0);
-    
-    // تنظيف الذاكرة الزائدة
-    if (bufferEnd - currentTime > 25) {
-      hls.media.currentTime = currentTime;
-    }
-  }
-}, 25000);
-
-// تنظيف عند إغلاق الصفحة
-window.addEventListener('unload', () => {
-  clearInterval(cleanupInterval);
-  if (hls) {
-    hls.destroy();
-  }
-  saveAppState();
-});
-
-// اكتشاف وتعديل للتحكم عن بعد
-let lastRemoteKeyTime = 0;
-let remoteKeySequence = [];
-
-document.addEventListener('keydown', (e) => {
-  const currentTime = Date.now();
-  const timeSinceLastKey = currentTime - lastRemoteKeyTime;
-  
-  if (timeSinceLastKey > 2000) {
-    remoteKeySequence = [];
-  }
-  
-  remoteKeySequence.push(e.key);
-  lastRemoteKeyTime = currentTime;
-  
-  // اكتشاف أوامر التحكم عن بعد الشائعة
-  if (remoteKeySequence.length >= 3) {
-    const sequence = remoteKeySequence.slice(-3).join('');
-    
-    if (sequence.includes('ArrowUpArrowUpArrowDownArrowDown')) {
-      // Easter egg أو أوامر خاصة
-      showHintTemporarily();
-      hintText.textContent = '✨ تجربة تلفاز ذكية متكاملة ✨';
-      remoteKeySequence = [];
-    }
-  }
-});
-
-// تحسينات للعرض على التلفاز
-if ('matchMedia' in window) {
-  const mediaQuery = window.matchMedia('(min-width: 1920px) and (min-height: 1080px)');
-  
-  if (mediaQuery.matches) {
-    document.documentElement.style.fontSize = '26px';
-    
-    // زيادة حجم الكروت للشاشات الكبيرة
-    const cards = document.querySelectorAll('.card');
-    cards.forEach(card => {
-      card.style.width = '240px';
-      card.style.height = '150px';
-    });
-  }
-}
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
