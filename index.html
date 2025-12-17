@@ -1,166 +1,256 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-/* ================= UI ONLY ================= */
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#000;color:#fff;overflow:hidden;font-family:system-ui}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:#fff;
+}
 
-video{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-
-/* Splash */
-#splash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-background:radial-gradient(circle,#1a1a2e,#000);z-index:999;transition:.6s}
+/* ===== شاشة الترحيب ===== */
+#splash{
+  position:fixed;
+  inset:0;
+  background:linear-gradient(135deg,#0a0a0a,#1a1a2e);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  transition:opacity .8s;
+}
 #splash.hide{opacity:0;pointer-events:none}
-#splash h1{font-size:4rem;
-background:linear-gradient(90deg,#ff6f00,#ffbb00);
--webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.splash-box{text-align:center}
+.splash-box h1{
+  font-size:3rem;
+  background:linear-gradient(90deg,#ff6f00,#ffbb00);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.splash-box p{margin-top:10px;opacity:.8}
 
-/* Overlay */
-.overlay{position:fixed;bottom:0;width:100%;padding:12px 24px;
-background:linear-gradient(to top,rgba(0,0,0,.95),rgba(0,0,0,.6),transparent);
-backdrop-filter:blur(20px);transition:.4s;z-index:5}
-.overlay.hide{transform:translateY(100%);opacity:0;pointer-events:none}
+/* ===== Video ===== */
+video{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#000;
+  z-index:1;
+}
 
-/* Channels */
-.channels{display:flex;gap:18px;justify-content:center;overflow-x:auto;
-direction:ltr;scroll-behavior:smooth}
+/* ===== Hint ===== */
+.hint{
+  position:fixed;
+  top:22px;
+  left:28px;
+  font-size:14px;
+  opacity:0;
+  transition:.3s;
+  z-index:4;
+  background:rgba(0,0,0,.5);
+  padding:6px 14px;
+  border-radius:20px;
+  backdrop-filter:blur(4px);
+  pointer-events:none;
+}
+.overlay:not(.hide) ~ .hint{opacity:.6}
+.overlay.hide ~ .hint{opacity:0}
+
+/* ===== Overlay ===== */
+.overlay{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  padding:8px 22px; /* ⬇️ أنحف */
+  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
+  transition:.3s;
+  z-index:3;
+  display:flex;
+  justify-content:center;
+}
+.overlay.hide{
+  opacity:0;
+  transform:translateY(18px);
+  pointer-events:none;
+}
+.overlay.moving{
+  padding:5px 18px;
+}
+
+/* ===== Channels ===== */
+.channels{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:center;
+  max-width:95%;
+  overflow-x:auto;
+  scrollbar-width:none;
+  direction:ltr;
+}
 .channels::-webkit-scrollbar{display:none}
 
-.card{width:180px;padding:10px;border-radius:18px;
-background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
-text-align:center;cursor:pointer;opacity:.6;filter:blur(.6px);transition:.3s}
-.card img{width:100%;height:80px;object-fit:contain}
-.card span{font-size:13px;margin-top:6px;display:block;white-space:nowrap;overflow:hidden}
+/* ===== Card ===== */
+.card{
+  width:180px;              /* ⬇️ أصغر */
+  padding:8px;
+  border-radius:16px;
+  background:rgba(255,255,255,.07);
+  text-align:center;
+  transition:.25s;
+  flex-shrink:0;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+}
+.card img{
+  width:100%;
+  height:62px;              /* ⬆️ صورة أكبر */
+  object-fit:contain;
+}
+.card span{
+  display:block;
+  margin-top:4px;
+  font-size:15px;           /* ⬇️ نص أصغر */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 
+/* ===== Active ===== */
 .card.active{
-background:linear-gradient(135deg,#ff6f00,#ff8f00);
-transform:scale(1.18);opacity:1;filter:none;
-box-shadow:0 20px 60px rgba(255,111,0,.6)}
-.card.active span{font-weight:700}
+  background:linear-gradient(135deg,#ff6f00,#ff8f00);
+  transform:scale(1.15);
+  box-shadow:0 10px 32px rgba(255,111,0,.4);
+}
 
-/* Hint */
-.hint{position:fixed;top:20px;left:30px;padding:10px 22px;
-background:rgba(0,0,0,.7);border-radius:30px;
-opacity:0;transition:.3s;z-index:6}
-.hint.show{opacity:.7}
+/* ===== Slim motion ===== */
+.overlay.moving .card{transform:scale(.92)}
+.overlay.moving .card.active{transform:scale(1.05)}
+.overlay.moving .card img{height:56px}
+.overlay.moving .card span{font-size:14px}
 </style>
 </head>
 
 <body>
 
-<div id="splash"><h1>ElAhmad TV</h1></div>
-<video id="video" autoplay playsinline></video>
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-box">
+    <h1>ElAhmad TV</h1>
+    <p>نتمنى لك مشاهدة ممتعة 📺✨</p>
+  </div>
+</div>
+
+<video id="player" autoplay playsinline></video>
+
+<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
 <div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
 </div>
 
-<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
-
 <script>
-/* ================= APP STATE ================= */
-const AppState={
-  channels:[],
-  index:0,
-  overlayVisible:false,
-  backPress:0,
-  STORAGE:"elahmad_tv_last"
-};
+const CHANNELS_URL="channels.json";
+const video=document.getElementById("player");
+const overlay=document.getElementById("overlay");
+const list=document.getElementById("channels");
+const splash=document.getElementById("splash");
 
-/* ================= PLAYER ENGINE ================= */
-const PlayerEngine={
-  hls:null,
-  video:document.getElementById("video"),
-  play(url){
-    if(this.hls){this.hls.destroy();this.hls=null}
-    if(Hls.isSupported()){
-      this.hls=new Hls({lowLatencyMode:true});
-      this.hls.loadSource(url);
-      this.hls.attachMedia(this.video);
-    }else this.video.src=url;
-    this.video.play().catch(()=>{});
-  },
-  destroy(){
-    if(this.hls){this.hls.destroy();this.hls=null}
-    this.video.pause();
+let hls=null,index=0,hideTimer=null,moveTimer=null,channels=[];
+let splashHidden=false;
+
+/* ===== Play ===== */
+function play(url){
+  if(hls){hls.destroy();hls=null}
+  if(Hls.isSupported()){
+    hls=new Hls({lowLatencyMode:true});
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  }else video.src=url;
+
+  video.muted=false;
+  video.volume=1;
+  video.play().catch(()=>{});
+
+  if(!splashHidden){
+    setTimeout(()=>{
+      splash.classList.add("hide");
+      splashHidden=true;
+    },3000); // ⏱️ 3 ثواني بعد تشغيل القناة
   }
-};
+}
 
-/* ================= OVERLAY MANAGER ================= */
-const OverlayManager={
-  el:document.getElementById("overlay"),
-  hint:document.getElementById("hint"),
-  timer:null,
-  show(){
-    this.el.classList.remove("hide");
-    this.hint.classList.add("show");
-    clearTimeout(this.timer);
-    this.timer=setTimeout(()=>this.hide(),5000);
-  },
-  hide(){
-    this.el.classList.add("hide");
-    this.hint.classList.remove("show");
-  }
-};
+/* ===== Overlay ===== */
+function showOverlay(){
+  overlay.classList.remove("hide");
+  overlay.classList.add("moving");
+  clearTimeout(moveTimer);
+  clearTimeout(hideTimer);
 
-/* ================= CHANNEL MANAGER ================= */
-const ChannelManager={
-  list:document.getElementById("channels"),
-  render(){
-    this.list.innerHTML="";
-    AppState.channels.forEach((c,i)=>{
-      const d=document.createElement("div");
-      d.className="card";
-      d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-      d.onclick=()=>this.select(i);
-      this.list.appendChild(d);
-    });
-  },
-  select(i){
-    AppState.index=i;
-    [...this.list.children].forEach(c=>c.classList.remove("active"));
-    const card=this.list.children[i];
+  moveTimer=setTimeout(()=>overlay.classList.remove("moving"),600);
+  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4500);
+}
+
+/* ===== Focus ===== */
+function focus(){
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  const card=list.children[index];
+  if(card){
     card.classList.add("active");
-    card.scrollIntoView({inline:"center"});
-    PlayerEngine.play(AppState.channels[i].stream);
-    localStorage.setItem(AppState.STORAGE,i);
-    OverlayManager.show();
+    card.scrollIntoView({behavior:"smooth",inline:"center"});
+    play(channels[index].stream);
   }
-};
+}
 
-/* ================= INPUT MANAGER ================= */
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowRight")ChannelManager.select((AppState.index+1)%AppState.channels.length);
-  if(e.key==="ArrowLeft")ChannelManager.select((AppState.index-1+AppState.channels.length)%AppState.channels.length);
-  if(e.key==="ArrowUp")OverlayManager.show();
-  if(e.key==="Escape"){
-    AppState.backPress++;
-    if(AppState.backPress>=2){
-      PlayerEngine.destroy();
-      window.close();
-    }else{
-      OverlayManager.hint.textContent="اضغط مرة أخرى للخروج";
-      OverlayManager.hint.classList.add("show");
-      setTimeout(()=>AppState.backPress=0,2000);
-    }
-  }
+/* ===== Load ===== */
+fetch(CHANNELS_URL)
+.then(r=>r.json())
+.then(data=>{
+  channels=data.channels||[];
+  channels.forEach((c,i)=>{
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+    d.onclick=()=>{index=i;focus();showOverlay()};
+    list.appendChild(d);
+  });
+  if(channels.length){focus();showOverlay();}
 });
 
-/* ================= INIT ================= */
-fetch("channels.json").then(r=>r.json()).then(d=>{
-  AppState.channels=d.channels;
-  const saved=localStorage.getItem(AppState.STORAGE);
-  if(saved)AppState.index=parseInt(saved);
-  ChannelManager.render();
-  ChannelManager.select(AppState.index);
-  setTimeout(()=>document.getElementById("splash").classList.add("hide"),3000);
+/* ===== Remote ===== */
+document.addEventListener("keydown",e=>{
+  if(!channels.length)return;
+  if(["ArrowRight","ArrowLeft","ArrowUp"].includes(e.key)){
+    e.preventDefault();showOverlay();
+  }
+  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
+  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
+});
+
+/* ===== Touch ===== */
+let startX=0;
+document.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;showOverlay()});
+document.addEventListener("touchend",e=>{
+  const diff=e.changedTouches[0].clientX-startX;
+  if(Math.abs(diff)>60){
+    index=diff<0?(index+1)%channels.length:(index-1+channels.length)%channels.length;
+    focus();
+  }
 });
 </script>
+
 </body>
 </html>
