@@ -2,167 +2,165 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ElAhmad TV</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:#000;
-  font-family:Arial, sans-serif;
-  direction:rtl;
-  color:#fff;
-}
+/* ================= UI ONLY ================= */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;color:#fff;overflow:hidden;font-family:system-ui}
 
-/* Header */
-.header{
-  background:#c62828;
-  padding:14px;
-  font-size:18px;
-  font-weight:bold;
-  text-align:center;
-}
+video{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 
-/* Player */
-.player-wrap{
-  background:#000;
-}
-video{
-  width:100%;
-  max-height:55vh;
-  background:#000;
-}
+/* Splash */
+#splash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+background:radial-gradient(circle,#1a1a2e,#000);z-index:999;transition:.6s}
+#splash.hide{opacity:0;pointer-events:none}
+#splash h1{font-size:4rem;
+background:linear-gradient(90deg,#ff6f00,#ffbb00);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 
-/* Status */
-.status{
-  padding:10px;
-  font-size:14px;
-  color:#ccc;
-  background:#111;
-}
+/* Overlay */
+.overlay{position:fixed;bottom:0;width:100%;padding:12px 24px;
+background:linear-gradient(to top,rgba(0,0,0,.95),rgba(0,0,0,.6),transparent);
+backdrop-filter:blur(20px);transition:.4s;z-index:5}
+.overlay.hide{transform:translateY(100%);opacity:0;pointer-events:none}
 
-/* Channels Grid */
-.channels{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:10px;
-}
+/* Channels */
+.channels{display:flex;gap:18px;justify-content:center;overflow-x:auto;
+direction:ltr;scroll-behavior:smooth}
+.channels::-webkit-scrollbar{display:none}
 
-.card{
-  background:#111;
-  border-radius:8px;
-  overflow:hidden;
-  cursor:pointer;
-  text-align:center;
-  transition:0.2s;
-}
-
-.card:hover{
-  background:#1a1a1a;
-}
+.card{width:180px;padding:10px;border-radius:18px;
+background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+text-align:center;cursor:pointer;opacity:.6;filter:blur(.6px);transition:.3s}
+.card img{width:100%;height:80px;object-fit:contain}
+.card span{font-size:13px;margin-top:6px;display:block;white-space:nowrap;overflow:hidden}
 
 .card.active{
-  outline:2px solid #c62828;
-}
+background:linear-gradient(135deg,#ff6f00,#ff8f00);
+transform:scale(1.18);opacity:1;filter:none;
+box-shadow:0 20px 60px rgba(255,111,0,.6)}
+.card.active span{font-weight:700}
 
-.card img{
-  width:100%;
-  height:90px;
-  object-fit:contain;
-  background:#000;
-}
-
-.card span{
-  display:block;
-  padding:8px;
-  font-size:14px;
-}
+/* Hint */
+.hint{position:fixed;top:20px;left:30px;padding:10px 22px;
+background:rgba(0,0,0,.7);border-radius:30px;
+opacity:0;transition:.3s;z-index:6}
+.hint.show{opacity:.7}
 </style>
 </head>
 
 <body>
 
-<div class="header">ElAhmad TV</div>
+<div id="splash"><h1>ElAhmad TV</h1></div>
+<video id="video" autoplay playsinline></video>
 
-<div class="player-wrap">
-  <video id="player" controls playsinline></video>
+<div class="overlay hide" id="overlay">
+  <div class="channels" id="channels"></div>
 </div>
 
-<div class="status" id="status">جاري تحميل القنوات...</div>
-<div class="channels" id="channels"></div>
+<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
 <script>
-/* رابط ملف القنوات */
-const CHANNELS_URL = "channels.json";
+/* ================= APP STATE ================= */
+const AppState={
+  channels:[],
+  index:0,
+  overlayVisible:false,
+  backPress:0,
+  STORAGE:"elahmad_tv_last"
+};
 
-const video   = document.getElementById("player");
-const list    = document.getElementById("channels");
-const statusE = document.getElementById("status");
-
-/* تشغيل البث */
-function playStream(url){
-  video.src = url;
-  video.load();
-  video.play().catch(()=>{
-    statusE.textContent = "فشل تشغيل القناة";
-  });
-}
-
-/* تحميل القنوات */
-fetch(CHANNELS_URL)
-.then(res=>{
-  if(!res.ok) throw new Error("HTTP Error");
-  return res.json();
-})
-.then(data=>{
-  if(!data.channels || data.channels.length === 0){
-    statusE.textContent = "لا توجد قنوات";
-    return;
+/* ================= PLAYER ENGINE ================= */
+const PlayerEngine={
+  hls:null,
+  video:document.getElementById("video"),
+  play(url){
+    if(this.hls){this.hls.destroy();this.hls=null}
+    if(Hls.isSupported()){
+      this.hls=new Hls({lowLatencyMode:true});
+      this.hls.loadSource(url);
+      this.hls.attachMedia(this.video);
+    }else this.video.src=url;
+    this.video.play().catch(()=>{});
+  },
+  destroy(){
+    if(this.hls){this.hls.destroy();this.hls=null}
+    this.video.pause();
   }
+};
 
-  statusE.textContent = "اختر قناة للتشغيل";
+/* ================= OVERLAY MANAGER ================= */
+const OverlayManager={
+  el:document.getElementById("overlay"),
+  hint:document.getElementById("hint"),
+  timer:null,
+  show(){
+    this.el.classList.remove("hide");
+    this.hint.classList.add("show");
+    clearTimeout(this.timer);
+    this.timer=setTimeout(()=>this.hide(),5000);
+  },
+  hide(){
+    this.el.classList.add("hide");
+    this.hint.classList.remove("show");
+  }
+};
 
-  data.channels.forEach(ch=>{
-    const card = document.createElement("div");
-    card.className = "card";
+/* ================= CHANNEL MANAGER ================= */
+const ChannelManager={
+  list:document.getElementById("channels"),
+  render(){
+    this.list.innerHTML="";
+    AppState.channels.forEach((c,i)=>{
+      const d=document.createElement("div");
+      d.className="card";
+      d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+      d.onclick=()=>this.select(i);
+      this.list.appendChild(d);
+    });
+  },
+  select(i){
+    AppState.index=i;
+    [...this.list.children].forEach(c=>c.classList.remove("active"));
+    const card=this.list.children[i];
+    card.classList.add("active");
+    card.scrollIntoView({inline:"center"});
+    PlayerEngine.play(AppState.channels[i].stream);
+    localStorage.setItem(AppState.STORAGE,i);
+    OverlayManager.show();
+  }
+};
 
-    const img = document.createElement("img");
-    img.src = ch.logo || "https://via.placeholder.com/300x150?text=TV";
-
-    const name = document.createElement("span");
-    name.textContent = ch.name;
-
-    card.appendChild(img);
-    card.appendChild(name);
-
-    card.onclick = ()=>{
-      document.querySelectorAll(".card")
-        .forEach(c=>c.classList.remove("active"));
-
-      card.classList.add("active");
-      statusE.textContent = "جاري تشغيل: " + ch.name;
-      playStream(ch.stream);
-    };
-
-    list.appendChild(card);
-  });
-})
-.catch(err=>{
-  console.error(err);
-  statusE.textContent = "خطأ في تحميل ملف القنوات";
+/* ================= INPUT MANAGER ================= */
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")ChannelManager.select((AppState.index+1)%AppState.channels.length);
+  if(e.key==="ArrowLeft")ChannelManager.select((AppState.index-1+AppState.channels.length)%AppState.channels.length);
+  if(e.key==="ArrowUp")OverlayManager.show();
+  if(e.key==="Escape"){
+    AppState.backPress++;
+    if(AppState.backPress>=2){
+      PlayerEngine.destroy();
+      window.close();
+    }else{
+      OverlayManager.hint.textContent="اضغط مرة أخرى للخروج";
+      OverlayManager.hint.classList.add("show");
+      setTimeout(()=>AppState.backPress=0,2000);
+    }
+  }
 });
 
-/* أحداث المشغّل */
-video.addEventListener("playing", ()=>{
-  statusE.textContent = "يعمل الآن ✔";
-});
-
-video.addEventListener("error", ()=>{
-  statusE.textContent = "خطأ في البث (قد يكون الرابط محمي)";
+/* ================= INIT ================= */
+fetch("channels.json").then(r=>r.json()).then(d=>{
+  AppState.channels=d.channels;
+  const saved=localStorage.getItem(AppState.STORAGE);
+  if(saved)AppState.index=parseInt(saved);
+  ChannelManager.render();
+  ChannelManager.select(AppState.index);
+  setTimeout(()=>document.getElementById("splash").classList.add("hide"),3000);
 });
 </script>
-
 </body>
 </html>
