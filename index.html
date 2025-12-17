@@ -1,54 +1,105 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>ElAhmad TV</title>
 
+<!-- HLS -->
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-html,body{
+/* ===== BASE ===== */
+*{
+  box-sizing:border-box;
   margin:0;
+  padding:0;
+}
+html,body{
+  width:100%;
+  height:100%;
   background:#000;
   color:#fff;
-  height:100%;
   overflow:hidden;
-  font-family:system-ui;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
 }
 
-/* فيديو */
+/* ===== VIDEO ===== */
 #player{
   position:fixed;
   inset:0;
   width:100%;
   height:100%;
   object-fit:contain;
+  background:#000;
+  z-index:1;
 }
 
-/* شريط القنوات */
+/* ===== SPLASH ===== */
+#splash{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+  transition:.6s;
+}
+#splash.hide{
+  opacity:0;
+  pointer-events:none;
+}
+#splash h1{
+  font-size:48px;
+  color:#ff6f00;
+}
+
+/* ===== LOADING ===== */
+.loading{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(0,0,0,.8);
+  padding:20px 30px;
+  border-radius:14px;
+  display:none;
+  z-index:50;
+}
+.loading.show{display:block}
+
+/* ===== OVERLAY ===== */
 .overlay{
   position:fixed;
   bottom:0;
   width:100%;
-  padding:12px;
+  padding:10px 16px;
   background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
   z-index:10;
+  transition:.35s;
+}
+.overlay.hide{
+  opacity:0;
+  transform:translateY(100%);
+  pointer-events:none;
 }
 
+/* ===== CHANNELS ===== */
 .channels{
   display:flex;
-  gap:16px;
+  gap:14px;
   overflow-x:auto;
-  direction:ltr;             /* ✅ الاتجاه الصحيح */
-  padding:10px;
+  direction:ltr; /* ✅ مهم */
+  padding:8px 0;
+  scrollbar-width:none;
 }
-
 .channels::-webkit-scrollbar{display:none}
 
+/* ===== CARD ===== */
 .card{
-  width:200px;
-  padding:12px;
+  width:190px;
+  padding:10px;
   border-radius:16px;
   background:rgba(255,255,255,.08);
   text-align:center;
@@ -57,127 +108,68 @@ html,body{
   transition:.35s;
   opacity:.45;
 }
-
 .card img{
   width:100%;
-  height:90px;
+  height:80px;
   object-fit:contain;
 }
+.card span{
+  display:block;
+  font-size:14px;
+  margin-top:6px;
+}
 
+/* ACTIVE */
 .card.active{
-  transform:scale(1.2);
+  transform:scale(1.18);
   opacity:1;
   background:linear-gradient(135deg,#ff6f00,#ff9800);
   box-shadow:0 0 40px rgba(255,111,0,.8);
 }
 
+/* ===== HINT ===== */
 .hint{
   position:fixed;
   top:20px;
   left:20px;
-  background:rgba(0,0,0,.8);
-  padding:10px 20px;
+  background:rgba(0,0,0,.75);
+  padding:10px 22px;
   border-radius:30px;
   opacity:0;
   transition:.3s;
+  z-index:20;
 }
-
 .hint.show{opacity:1}
-
 </style>
 </head>
 
 <body>
 
+<!-- Splash -->
+<div id="splash">
+  <h1>ElAhmad TV</h1>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  جاري التحميل...
+</div>
+
+<!-- Video -->
 <video id="player" autoplay playsinline></video>
 
-<div class="hint" id="hint">اضغط مرة أخرى للخروج</div>
+<!-- Hint -->
+<div class="hint" id="hint">
+  اضغط مرة أخرى للخروج
+</div>
 
-<div class="overlay" id="overlay">
+<!-- Channels Overlay -->
+<div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
 </div>
 
-<script>
-const video = document.getElementById("player");
-const list  = document.getElementById("channels");
-const hint  = document.getElementById("hint");
-
-let hls;
-let channels=[];
-let index=0;
-let backCount=0;
-let backTimer=null;
-
-/* تحميل القنوات */
-fetch("channels.json")
-.then(r=>r.json())
-.then(d=>{
-  channels=d.channels;
-  render();
-  select(0);
-});
-
-/* رسم القنوات */
-function render(){
-  list.innerHTML="";
-  channels.forEach((c,i)=>{
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML=`<img src="${c.logo}"><div>${c.name}</div>`;
-    div.onclick=()=>select(i);
-    div.onkeydown=e=>{if(e.key==="Enter")select(i)};
-    list.appendChild(div);
-  });
-}
-
-/* اختيار قناة */
-function select(i){
-  index=i;
-  document.querySelectorAll(".card").forEach((c,j)=>{
-    c.classList.toggle("active",j===i);
-    if(j===i) c.scrollIntoView({inline:"center",behavior:"smooth"});
-  });
-  play(channels[i].stream);
-}
-
-/* تشغيل */
-function play(url){
-  if(hls){hls.destroy();hls=null}
-  if(Hls.isSupported()){
-    hls=new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(video);
-  }else{
-    video.src=url;
-  }
-  video.play();
-}
-
-/* الخروج النهائي */
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"){
-    backCount++;
-    hint.classList.add("show");
-
-    if(backCount===2){
-      if(hls) hls.destroy();
-      video.pause();
-      video.src="";
-      window.close();
-      location.href="about:blank";
-    }
-
-    clearTimeout(backTimer);
-    backTimer=setTimeout(()=>{
-      backCount=0;
-      hint.classList.remove("show");
-    },2000);
-  }
-
-  if(e.key==="ArrowRight") select((index+1)%channels.length);
-  if(e.key==="ArrowLeft")  select((index-1+channels.length)%channels.length);
-});
-</script>
+<!-- App Logic -->
+<script src="app.js"></script>
 
 </body>
 </html>
