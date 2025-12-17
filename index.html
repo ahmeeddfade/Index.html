@@ -1,165 +1,183 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 
 <style>
-/* ===== RESET ===== */
-*{margin:0;padding:0;box-sizing:border-box}
 html,body{
-  width:100%;height:100%;
-  background:#000;color:#fff;
-  overflow:hidden;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-}
-
-/* ===== SPLASH ===== */
-#splash{
-  position:fixed;inset:0;
-  background:radial-gradient(circle,#1a1a2e,#000);
-  display:flex;align-items:center;justify-content:center;
-  z-index:9999;
-  transition:.6s;
-}
-#splash.hide{opacity:0;pointer-events:none}
-#splash h1{
-  font-size:4rem;
-  background:linear-gradient(90deg,#ff6f00,#ffbb00);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-
-/* ===== VIDEO ===== */
-#player{
-  position:fixed;inset:0;
-  width:100%;height:100%;
-  object-fit:contain;
+  margin:0;
   background:#000;
-  z-index:1;
-}
-
-/* ===== HINT ===== */
-.hint{
-  position:fixed;top:20px;left:30px;
-  padding:10px 22px;
-  border-radius:30px;
-  background:rgba(0,0,0,.7);
-  font-size:14px;
-  opacity:0;
-  transition:.3s;
-  z-index:5;
-}
-.overlay:not(.hide) ~ .hint{opacity:.6}
-
-/* ===== OVERLAY ===== */
-.overlay{
-  position:fixed;
-  bottom:0;left:0;width:100%;
-  padding:8px 20px;
-  background:linear-gradient(to top,
-    rgba(0,0,0,.95),
-    rgba(0,0,0,.7),
-    transparent);
-  backdrop-filter:blur(20px);
-  transition:.4s;
-  z-index:4;
-}
-.overlay.hide{
-  transform:translateY(100%);
-  opacity:0;
-  pointer-events:none;
-}
-
-/* ===== CHANNELS ===== */
-.channels{
-  display:flex;
-  gap:14px;
-  justify-content:center;
-  align-items:center;
-  overflow-x:auto;
-  scrollbar-width:none;
-}
-.channels::-webkit-scrollbar{display:none}
-
-/* ===== CARD ===== */
-.card{
-  width:180px;
-  padding:8px;
-  border-radius:16px;
-  background:rgba(255,255,255,.06);
-  text-align:center;
-  border:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(15px);
-  opacity:.6;
-  filter:blur(.6px);
-  transition:.35s;
-}
-.card img{
-  width:100%;
-  height:80px;
-  object-fit:contain;
-}
-.card span{
-  display:block;
-  margin-top:6px;
-  font-size:13px;
-  white-space:nowrap;
+  color:#fff;
+  height:100%;
   overflow:hidden;
-  text-overflow:ellipsis;
+  font-family:system-ui;
 }
 
-/* ===== ACTIVE ===== */
-.card.active{
-  background:linear-gradient(135deg,#ff6f00,#ff8f00);
-  transform:scale(1.18);
-  opacity:1;
-  filter:none;
-  box-shadow:0 20px 60px rgba(255,111,0,.6);
-}
-.card.active span{
-  font-size:14px;
-  font-weight:700;
-}
-
-/* ===== LOADING ===== */
-.loading{
+/* فيديو */
+#player{
   position:fixed;
   inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:6;
+  width:100%;
+  height:100%;
+  object-fit:contain;
 }
-.loading.show{display:flex}
-.loading div{
-  padding:20px 30px;
-  background:rgba(0,0,0,.7);
-  border-radius:20px;
+
+/* شريط القنوات */
+.overlay{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  padding:12px;
+  background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
+  z-index:10;
 }
+
+.channels{
+  display:flex;
+  gap:16px;
+  overflow-x:auto;
+  direction:ltr;             /* ✅ الاتجاه الصحيح */
+  padding:10px;
+}
+
+.channels::-webkit-scrollbar{display:none}
+
+.card{
+  width:200px;
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.08);
+  text-align:center;
+  flex-shrink:0;
+  cursor:pointer;
+  transition:.35s;
+  opacity:.45;
+}
+
+.card img{
+  width:100%;
+  height:90px;
+  object-fit:contain;
+}
+
+.card.active{
+  transform:scale(1.2);
+  opacity:1;
+  background:linear-gradient(135deg,#ff6f00,#ff9800);
+  box-shadow:0 0 40px rgba(255,111,0,.8);
+}
+
+.hint{
+  position:fixed;
+  top:20px;
+  left:20px;
+  background:rgba(0,0,0,.8);
+  padding:10px 20px;
+  border-radius:30px;
+  opacity:0;
+  transition:.3s;
+}
+
+.hint.show{opacity:1}
+
 </style>
 </head>
 
 <body>
 
-<div id="splash"><h1>ElAhmad TV</h1></div>
-
-<div class="loading" id="loading">
-  <div>جاري التحميل…</div>
-</div>
-
 <video id="player" autoplay playsinline></video>
 
-<div class="overlay hide" id="overlay">
+<div class="hint" id="hint">اضغط مرة أخرى للخروج</div>
+
+<div class="overlay" id="overlay">
   <div class="channels" id="channels"></div>
 </div>
 
-<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
+<script>
+const video = document.getElementById("player");
+const list  = document.getElementById("channels");
+const hint  = document.getElementById("hint");
 
-<script src="app.js"></script>
+let hls;
+let channels=[];
+let index=0;
+let backCount=0;
+let backTimer=null;
+
+/* تحميل القنوات */
+fetch("channels.json")
+.then(r=>r.json())
+.then(d=>{
+  channels=d.channels;
+  render();
+  select(0);
+});
+
+/* رسم القنوات */
+function render(){
+  list.innerHTML="";
+  channels.forEach((c,i)=>{
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<img src="${c.logo}"><div>${c.name}</div>`;
+    div.onclick=()=>select(i);
+    div.onkeydown=e=>{if(e.key==="Enter")select(i)};
+    list.appendChild(div);
+  });
+}
+
+/* اختيار قناة */
+function select(i){
+  index=i;
+  document.querySelectorAll(".card").forEach((c,j)=>{
+    c.classList.toggle("active",j===i);
+    if(j===i) c.scrollIntoView({inline:"center",behavior:"smooth"});
+  });
+  play(channels[i].stream);
+}
+
+/* تشغيل */
+function play(url){
+  if(hls){hls.destroy();hls=null}
+  if(Hls.isSupported()){
+    hls=new Hls();
+    hls.loadSource(url);
+    hls.attachMedia(video);
+  }else{
+    video.src=url;
+  }
+  video.play();
+}
+
+/* الخروج النهائي */
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    backCount++;
+    hint.classList.add("show");
+
+    if(backCount===2){
+      if(hls) hls.destroy();
+      video.pause();
+      video.src="";
+      window.close();
+      location.href="about:blank";
+    }
+
+    clearTimeout(backTimer);
+    backTimer=setTimeout(()=>{
+      backCount=0;
+      hint.classList.remove("show");
+    },2000);
+  }
+
+  if(e.key==="ArrowRight") select((index+1)%channels.length);
+  if(e.key==="ArrowLeft")  select((index-1+channels.length)%channels.length);
+});
+</script>
+
 </body>
 </html>
