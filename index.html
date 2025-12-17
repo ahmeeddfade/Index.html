@@ -4,159 +4,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ElAhmad TV</title>
-
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{
-  width:100%;
-  height:100%;
-  background:#000;
-  overflow:hidden;
+  width:100%;height:100%;background:#000;overflow:hidden;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:#fff;
+  color:#fff
+}
+video{
+  position:fixed;inset:0;width:100%;height:100%;
+  object-fit:contain;background:#000;z-index:1
 }
 
-/* ===== شاشة الترحيب ===== */
+/* Splash */
 #splash{
-  position:fixed;
-  inset:0;
+  position:fixed;inset:0;
   background:linear-gradient(135deg,#0a0a0a,#1a1a2e);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  transition:opacity .8s;
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;transition:.8s
 }
 #splash.hide{opacity:0;pointer-events:none}
-.splash-box{text-align:center}
-.splash-box h1{
+#splash h1{
   font-size:3rem;
   background:linear-gradient(90deg,#ff6f00,#ffbb00);
   -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.splash-box p{margin-top:10px;opacity:.8}
-
-/* ===== Video ===== */
-video{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  background:#000;
-  z-index:1;
+  -webkit-text-fill-color:transparent
 }
 
-/* ===== Hint ===== */
+/* Hint */
 .hint{
-  position:fixed;
-  top:22px;
-  left:28px;
-  font-size:14px;
-  opacity:0;
-  transition:.3s;
-  z-index:4;
-  background:rgba(0,0,0,.5);
-  padding:6px 14px;
-  border-radius:20px;
-  backdrop-filter:blur(4px);
-  pointer-events:none;
+  position:fixed;top:22px;left:28px;
+  font-size:14px;opacity:0;transition:.3s;
+  background:rgba(0,0,0,.6);
+  padding:6px 14px;border-radius:20px;
+  z-index:5;pointer-events:none
 }
-.overlay:not(.hide) ~ .hint{opacity:.6}
-.overlay.hide ~ .hint{opacity:0}
+.hint.show{opacity:.7}
 
-/* ===== Overlay ===== */
+/* Overlay */
 .overlay{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  padding:8px 22px; /* ⬇️ أنحف */
+  position:fixed;bottom:0;left:0;width:100%;
+  padding:8px 20px;
   background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
-  transition:.3s;
-  z-index:3;
-  display:flex;
-  justify-content:center;
+  display:flex;justify-content:center;
+  transition:.3s;z-index:3
 }
-.overlay.hide{
-  opacity:0;
-  transform:translateY(18px);
-  pointer-events:none;
-}
-.overlay.moving{
-  padding:5px 18px;
-}
+.overlay.hide{opacity:0;transform:translateY(20px);pointer-events:none}
 
-/* ===== Channels ===== */
+/* Channels */
 .channels{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  justify-content:center;
-  max-width:95%;
-  overflow-x:auto;
-  scrollbar-width:none;
-  direction:ltr;
+  display:flex;gap:12px;align-items:center;
+  max-width:95%;overflow-x:auto;
+  direction:ltr;scrollbar-width:none
 }
 .channels::-webkit-scrollbar{display:none}
 
-/* ===== Card ===== */
+/* Card */
 .card{
-  width:180px;              /* ⬇️ أصغر */
-  padding:8px;
+  width:180px;padding:8px;
   border-radius:16px;
   background:rgba(255,255,255,.07);
-  text-align:center;
-  transition:.25s;
-  flex-shrink:0;
-  cursor:pointer;
-  backdrop-filter:blur(10px);
+  text-align:center;cursor:pointer;
+  transition:.25s;flex-shrink:0
 }
 .card img{
-  width:100%;
-  height:62px;              /* ⬆️ صورة أكبر */
-  object-fit:contain;
+  width:100%;height:62px;object-fit:contain
 }
 .card span{
-  display:block;
-  margin-top:4px;
-  font-size:15px;           /* ⬇️ نص أصغر */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  display:block;margin-top:4px;
+  font-size:14px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
 }
-
-/* ===== Active ===== */
 .card.active{
   background:linear-gradient(135deg,#ff6f00,#ff8f00);
   transform:scale(1.15);
-  box-shadow:0 10px 32px rgba(255,111,0,.4);
+  box-shadow:0 10px 30px rgba(255,111,0,.4)
 }
-
-/* ===== Slim motion ===== */
-.overlay.moving .card{transform:scale(.92)}
-.overlay.moving .card.active{transform:scale(1.05)}
-.overlay.moving .card img{height:56px}
-.overlay.moving .card span{font-size:14px}
 </style>
 </head>
 
 <body>
 
-<!-- Splash -->
-<div id="splash">
-  <div class="splash-box">
-    <h1>ElAhmad TV</h1>
-    <p>نتمنى لك مشاهدة ممتعة 📺✨</p>
-  </div>
-</div>
-
+<div id="splash"><h1>ElAhmad TV</h1></div>
 <video id="player" autoplay playsinline></video>
-
-<div class="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
+<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
 <div class="overlay hide" id="overlay">
   <div class="channels" id="channels"></div>
@@ -168,40 +101,49 @@ const video=document.getElementById("player");
 const overlay=document.getElementById("overlay");
 const list=document.getElementById("channels");
 const splash=document.getElementById("splash");
+const hint=document.getElementById("hint");
 
-let hls=null,index=0,hideTimer=null,moveTimer=null,channels=[];
-let splashHidden=false;
+let hls=null,index=0,channels=[];
+let hideTimer=null,exitCount=0,splashHidden=false;
+const STORAGE="elahmad_last_channel";
+
+/* ===== Wuffy ===== */
+function openWuffy(url){
+  const encoded=btoa(url);
+  location.href=`intent://${encoded}#Intent;scheme=xmtv;package=co.wuffy.player;end`;
+}
 
 /* ===== Play ===== */
-function play(url){
+function play(channel){
+  if(channel.type==="wuffy"){
+    openWuffy(channel.stream);
+    return;
+  }
   if(hls){hls.destroy();hls=null}
   if(Hls.isSupported()){
     hls=new Hls({lowLatencyMode:true});
-    hls.loadSource(url);
+    hls.loadSource(channel.stream);
     hls.attachMedia(video);
-  }else video.src=url;
+  }else video.src=channel.stream;
 
-  video.muted=false;
-  video.volume=1;
   video.play().catch(()=>{});
-
   if(!splashHidden){
     setTimeout(()=>{
       splash.classList.add("hide");
       splashHidden=true;
-    },3000); // ⏱️ 3 ثواني بعد تشغيل القناة
+    },3000);
   }
 }
 
 /* ===== Overlay ===== */
 function showOverlay(){
   overlay.classList.remove("hide");
-  overlay.classList.add("moving");
-  clearTimeout(moveTimer);
+  hint.classList.add("show");
   clearTimeout(hideTimer);
-
-  moveTimer=setTimeout(()=>overlay.classList.remove("moving"),600);
-  hideTimer=setTimeout(()=>overlay.classList.add("hide"),4500);
+  hideTimer=setTimeout(()=>{
+    overlay.classList.add("hide");
+    hint.classList.remove("show");
+  },4000);
 }
 
 /* ===== Focus ===== */
@@ -211,23 +153,25 @@ function focus(){
   if(card){
     card.classList.add("active");
     card.scrollIntoView({behavior:"smooth",inline:"center"});
-    play(channels[index].stream);
+    play(channels[index]);
+    localStorage.setItem(STORAGE,index);
   }
 }
 
 /* ===== Load ===== */
-fetch(CHANNELS_URL)
-.then(r=>r.json())
-.then(data=>{
-  channels=data.channels||[];
+fetch(CHANNELS_URL).then(r=>r.json()).then(d=>{
+  channels=d.channels||[];
   channels.forEach((c,i)=>{
-    const d=document.createElement("div");
-    d.className="card";
-    d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-    d.onclick=()=>{index=i;focus();showOverlay()};
-    list.appendChild(d);
+    const el=document.createElement("div");
+    el.className="card";
+    el.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+    el.onclick=()=>{index=i;focus();showOverlay()};
+    el.ontouchend=el.onclick;
+    list.appendChild(el);
   });
-  if(channels.length){focus();showOverlay();}
+  const saved=+localStorage.getItem(STORAGE);
+  if(saved>=0&&channels[saved]) index=saved;
+  focus();showOverlay();
 });
 
 /* ===== Remote ===== */
@@ -238,19 +182,39 @@ document.addEventListener("keydown",e=>{
   }
   if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
   if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
-});
-
-/* ===== Touch ===== */
-let startX=0;
-document.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;showOverlay()});
-document.addEventListener("touchend",e=>{
-  const diff=e.changedTouches[0].clientX-startX;
-  if(Math.abs(diff)>60){
-    index=diff<0?(index+1)%channels.length:(index-1+channels.length)%channels.length;
-    focus();
+  if(e.key==="Backspace"||e.key==="Escape"){
+    exitCount++;
+    if(exitCount>=2){
+      if(hls)hls.destroy();
+      window.close();
+    }else{
+      hint.textContent="اضغط مرة أخرى للخروج";
+      hint.classList.add("show");
+      setTimeout(()=>hint.textContent="⬅️➡️ تغيير القناة | ⬆️ القائمة",2000);
+    }
   }
 });
-</script>
 
+/* ===== Voice (رياضة / أخبار) ===== */
+if("webkitSpeechRecognition"in window){
+  const rec=new webkitSpeechRecognition();
+  rec.lang="ar";
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Search") rec.start();
+  });
+  rec.onresult=e=>{
+    const t=e.results[0][0].transcript;
+    const map={
+      "رياضة 1":"الرياضة 1",
+      "الجزيرة":"الجزيرة",
+      "الحدث":"الحدث"
+    };
+    const name=map[t];
+    if(!name)return;
+    const i=channels.findIndex(c=>c.name.includes(name));
+    if(i>-1){index=i;focus();showOverlay();}
+  };
+}
+</script>
 </body>
 </html>
