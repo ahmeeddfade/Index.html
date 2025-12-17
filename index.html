@@ -188,10 +188,9 @@ html, body {
   object-fit: contain;
   background: #000;
   z-index: 1;
-  pointer-events: none;
 }
 
-/* ===== النص الإرشادي (HINT) ===== */
+/* ===== النص الإرشادي (HINT) - مخفي إلا عند الحاجة ===== */
 .hint {
   position: fixed;
   top: 25px;
@@ -225,26 +224,26 @@ html, body {
   opacity: 0.9;
 }
 
-/* ===== شريط القنوات (OVERLAY) - أنحف وأفخم ===== */
+/* ===== شريط القنوات (OVERLAY) - أصغر وأكثر نحافة ===== */
 .overlay {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 10px 20px; /* ✅ نحيف جداً */
+  padding: 8px 15px; /* ✅ أصغر وأكثر نحافة */
   background: linear-gradient(to top, 
     rgba(0, 0, 0, 0.98) 0%, 
-    rgba(0, 0, 0, 0.92) 10%, 
-    rgba(0, 0, 0, 0.85) 20%, 
-    rgba(0, 0, 0, 0.7) 40%, 
+    rgba(0, 0, 0, 0.92) 15%, 
+    rgba(0, 0, 0, 0.85) 30%, 
     transparent 100%);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 5;
   display: flex;
   justify-content: center;
-  backdrop-filter: blur(25px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px) saturate(180%);
+  border-top: 1px solid rgba(255, 111, 0, 0.15);
   transform: translateY(0);
+  height: 140px; /* ✅ ارتفاع ثابت أصغر */
 }
 
 .overlay.hide {
@@ -258,16 +257,19 @@ html, body {
   width: 100%;
   max-width: 95%;
   position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 /* ===== شريط التمرير العلوي ===== */
 .scroll-indicator {
   position: absolute;
-  top: -8px;
+  top: -6px;
   left: 50%;
   transform: translateX(-50%);
-  width: 200px;
-  height: 3px;
+  width: 180px;
+  height: 2px;
   background: linear-gradient(90deg, 
     transparent, 
     rgba(255, 111, 0, 0.5), 
@@ -287,102 +289,104 @@ html, body {
 /* ===== قائمة القنوات ===== */
 .channels {
   display: flex;
-  gap: 15px; /* ✅ مسافة أقل */
+  gap: 12px; /* ✅ مسافة أقل بين الكروت */
   align-items: center;
   justify-content: center;
   overflow-x: auto;
-  padding: 12px 0;
+  padding: 8px 0;
   scrollbar-width: none;
   direction: ltr;
   scroll-behavior: smooth;
   position: relative;
+  height: 100%;
+  width: 100%;
 }
 
 .channels::-webkit-scrollbar {
   display: none;
 }
 
-/* ===== كروت القنوات - تصميم فخم ===== */
+/* ===== كروت القنوات - تصميم أصغر وأنحف ===== */
 .card {
-  width: 190px; /* ✅ أصغر */
-  padding: 10px; /* ✅ نحيف */
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.06);
+  width: 160px; /* ✅ أصغر بكثير */
+  padding: 8px; /* ✅ نحيف جداً */
+  border-radius: 14px; /* ✅ زوايا أصغر */
+  background: rgba(255, 255, 255, 0.05); /* ✅ إزالة الـ blur */
   text-align: center;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px) saturate(160%);
   direction: rtl;
   position: relative;
   overflow: hidden;
-  opacity: 0.7; /* ✅ Blur بصري للقنوات غير النشطة */
-  filter: blur(0.5px);
+  opacity: 0.85;
+  height: 110px; /* ✅ ارتفاع أصغر */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-8px) scale(1.05);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-5px);
   border-color: rgba(255, 111, 0, 0.4);
-  opacity: 0.9;
-  filter: blur(0);
+  opacity: 0.95;
   box-shadow: 
-    0 15px 40px rgba(0, 0, 0, 0.4),
+    0 10px 25px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 111, 0, 0.2);
 }
 
 .card-image-container {
   width: 100%;
-  height: 85px; /* ✅ صورة أكبر */
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
+  height: 60px; /* ✅ صورة أصغر */
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   position: relative;
 }
 
 .card img {
-  width: 90%;
-  height: 90%;
+  width: 85%;
+  height: 85%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   transition: transform 0.3s ease;
 }
 
 .card:hover img {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .card span {
   display: block;
-  font-size: 14px; /* ✅ نص أصغر */
+  font-size: 13px; /* ✅ نص أصغر */
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 0 5px;
-  line-height: 1.4;
+  padding: 0 3px;
+  line-height: 1.3;
   transition: all 0.3s ease;
 }
 
-/* ===== القناة النشطة - برتقالي لامع ===== */
+/* ===== القناة النشطة - برتقالي لامع بدون blur ===== */
 .card.active {
   background: linear-gradient(135deg, 
     rgba(255, 111, 0, 0.95) 0%, 
     rgba(255, 143, 0, 0.95) 100%);
-  transform: scale(1.2); /* ✅ تكبير أكبر */
-  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08); /* ✅ تكبير معتدل */
+  border-color: rgba(255, 255, 255, 0.3);
   opacity: 1;
-  filter: blur(0);
   box-shadow: 
-    0 20px 60px rgba(255, 111, 0, 0.6),
-    0 0 0 2px rgba(255, 255, 255, 0.2),
-    inset 0 2px 15px rgba(255, 255, 255, 0.3);
+    0 15px 40px rgba(255, 111, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 10px rgba(255, 255, 255, 0.2);
   z-index: 2;
   animation: active-pulse 2s infinite;
 }
@@ -392,9 +396,9 @@ html, body {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2) 0%, 
+    rgba(255, 255, 255, 0.15) 0%, 
     transparent 50%);
-  border-radius: 18px;
+  border-radius: 14px;
 }
 
 .card.active .card-image-container {
@@ -403,34 +407,34 @@ html, body {
 
 .card.active span {
   color: white;
-  font-weight: 700;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  font-size: 15px; /* ✅ تكبير بسيط للنص النشط */
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-size: 13px; /* ✅ نفس حجم النص */
 }
 
 @keyframes active-pulse {
-  0%, 100% { box-shadow: 0 20px 60px rgba(255, 111, 0, 0.6); }
-  50% { box-shadow: 0 20px 80px rgba(255, 111, 0, 0.8); }
+  0%, 100% { box-shadow: 0 15px 40px rgba(255, 111, 0, 0.5); }
+  50% { box-shadow: 0 15px 50px rgba(255, 111, 0, 0.6); }
 }
 
-/* ===== مؤشر القناة الحالية ===== */
+/* ===== مؤشر القناة الحالية - محسّن ===== */
 .current-channel {
   position: fixed;
   top: 25px;
   right: 30px;
   background: rgba(0, 0, 0, 0.9);
-  padding: 12px 25px;
-  border-radius: 30px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 111, 0, 0.3);
+  padding: 10px 20px;
+  border-radius: 25px;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 111, 0, 0.4);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   z-index: 10;
   opacity: 0;
   transform: translateY(-10px);
   transition: all 0.4s ease;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
 
 .current-channel.show {
@@ -439,14 +443,14 @@ html, body {
 }
 
 .current-channel-logo {
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 
 .current-channel-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
   direction: rtl;
@@ -460,14 +464,14 @@ html, body {
   transform: translate(-50%, -50%);
   z-index: 100;
   background: rgba(0, 0, 0, 0.9);
-  padding: 30px 40px;
-  border-radius: 20px;
+  padding: 25px 35px;
+  border-radius: 18px;
   display: none;
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
   text-align: center;
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .loading.show {
@@ -476,17 +480,17 @@ html, body {
 }
 
 .loading-spinner {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border: 3px solid rgba(255, 255, 255, 0.1);
   border-top: 3px solid #ff6f00;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+  margin: 0 auto 15px;
 }
 
 .loading p {
-  font-size: 17px;
+  font-size: 16px;
   opacity: 0.9;
   font-weight: 500;
 }
@@ -523,13 +527,13 @@ html, body {
 
 .exit-box {
   background: rgba(30, 30, 30, 0.95);
-  padding: 40px;
-  border-radius: 30px;
+  padding: 35px;
+  border-radius: 25px;
   text-align: center;
-  max-width: 500px;
+  max-width: 450px;
   width: 90%;
   border: 1px solid rgba(255, 111, 0, 0.3);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8);
   transform: scale(0.9);
   transition: transform 0.3s ease;
 }
@@ -539,34 +543,34 @@ html, body {
 }
 
 .exit-title {
-  font-size: 28px;
+  font-size: 26px;
   margin-bottom: 15px;
   color: #ff6f00;
   font-weight: 700;
 }
 
 .exit-message {
-  font-size: 18px;
-  margin-bottom: 30px;
+  font-size: 17px;
+  margin-bottom: 25px;
   opacity: 0.9;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .exit-buttons {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   justify-content: center;
 }
 
 .exit-btn {
-  padding: 15px 40px;
-  border-radius: 15px;
-  font-size: 18px;
+  padding: 12px 35px;
+  border-radius: 12px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
-  min-width: 150px;
+  min-width: 140px;
 }
 
 .exit-btn.cancel {
@@ -576,7 +580,7 @@ html, body {
 
 .exit-btn.cancel:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .exit-btn.confirm {
@@ -586,63 +590,70 @@ html, body {
 
 .exit-btn.confirm:hover {
   background: linear-gradient(90deg, #ff8f00, #ff6f00);
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(255, 111, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
 }
 
-/* ===== تحسينات للتلفاز ===== */
+/* ===== تحسينات للتلفاز الذكي ===== */
 @media (min-width: 1600px) {
+  .overlay {
+    height: 150px;
+    padding: 10px 20px;
+  }
+  
   .card {
-    width: 220px;
-    padding: 15px;
+    width: 180px;
+    height: 120px;
   }
   
   .card-image-container {
-    height: 100px;
+    height: 70px;
   }
   
   .card span {
-    font-size: 16px;
-  }
-  
-  .hint {
-    font-size: 18px;
-    padding: 15px 30px;
+    font-size: 14px;
   }
   
   .current-channel {
-    padding: 15px 30px;
+    padding: 12px 25px;
   }
   
   .current-channel-logo {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
   }
   
   .current-channel-name {
-    font-size: 18px;
+    font-size: 16px;
   }
 }
 
 @media (min-width: 1920px) {
   .overlay {
     padding: 12px 25px;
+    height: 160px;
   }
   
   .channels {
-    gap: 20px;
+    gap: 15px;
   }
   
   .card {
-    width: 240px;
+    width: 200px;
+    height: 130px;
   }
   
   .card-image-container {
-    height: 110px;
+    height: 75px;
   }
   
   .card span {
-    font-size: 17px;
+    font-size: 15px;
+  }
+  
+  .current-channel {
+    right: 40px;
+    top: 30px;
   }
 }
 
@@ -668,17 +679,37 @@ html, body {
   }
   
   .card {
-    width: 160px;
+    width: 140px;
+    height: 100px;
+  }
+  
+  .card-image-container {
+    height: 50px;
+  }
+  
+  .card span {
+    font-size: 12px;
   }
   
   .current-channel {
-    right: 20px;
-    padding: 10px 20px;
+    right: 15px;
+    padding: 8px 15px;
+    top: 15px;
+  }
+  
+  .current-channel-logo {
+    width: 25px;
+    height: 25px;
+  }
+  
+  .current-channel-name {
+    font-size: 13px;
   }
   
   .hint {
-    left: 20px;
-    padding: 10px 20px;
+    left: 15px;
+    padding: 10px 18px;
+    font-size: 13px;
   }
 }
 
@@ -705,65 +736,26 @@ html, body {
   }
 }
 
-/* ===== تحسينات مشغل الفيديو ===== */
-.video-controls {
+/* ===== تأثيرات خاصة للتلفاز ===== */
+.tv-focus-effect {
   position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  padding: 15px 30px;
-  border-radius: 25px;
-  display: flex;
-  gap: 20px;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  z-index: 6;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
 }
 
-.video-controls.show {
-  opacity: 1;
-}
-
-.control-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.control-btn:hover {
-  background: rgba(255, 111, 0, 0.2);
-  transform: scale(1.1);
-}
-
-.volume-slider {
-  width: 100px;
-  height: 5px;
-  -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-  outline: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #ff6f00;
-  cursor: pointer;
+/* ===== تحسينات الأداء ===== */
+.performance-optimized {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
 }
 </style>
 </head>
@@ -803,14 +795,6 @@ html, body {
   <span class="current-channel-name" id="currentChannelName"></span>
 </div>
 
-<!-- أدوات تحكم الفيديو -->
-<div class="video-controls" id="videoControls">
-  <button class="control-btn" id="playPauseBtn">⏯️</button>
-  <button class="control-btn" id="muteBtn">🔊</button>
-  <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
-  <button class="control-btn" id="fullscreenBtn">⛶</button>
-</div>
-
 <!-- تنبيه تأكيد الخروج -->
 <div class="exit-confirm" id="exitConfirm">
   <div class="exit-box">
@@ -845,18 +829,12 @@ const currentChannelName = document.getElementById('currentChannelName');
 const exitConfirm = document.getElementById('exitConfirm');
 const loadingText = document.getElementById('loadingText');
 const hintText = document.getElementById('hintText');
-const videoControls = document.getElementById('videoControls');
-const playPauseBtn = document.getElementById('playPauseBtn');
-const muteBtn = document.getElementById('muteBtn');
-const volumeSlider = document.getElementById('volumeSlider');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
 
 let hls = null;
 let currentIndex = 0;
 let hideOverlayTimer = null;
 let showHintTimer = null;
 let hideCurrentChannelTimer = null;
-let hideControlsTimer = null;
 let channels = [];
 let splashHidden = false;
 let exitAttempts = 0;
@@ -889,11 +867,25 @@ function loadAppState() {
       }
       if (state.volume !== undefined) {
         video.volume = state.volume;
-        volumeSlider.value = state.volume;
       }
     }
   } catch (e) {
     console.warn('لا يمكن تحميل الحالة السابقة:', e);
+  }
+}
+
+// ===== حفظ حالة التطبيق =====
+function saveAppState() {
+  try {
+    const state = {
+      lastChannel: currentIndex,
+      lastUpdate: Date.now(),
+      volume: video.volume,
+      muted: video.muted
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('لا يمكن حفظ الحالة:', e);
   }
 }
 
@@ -975,7 +967,6 @@ function selectChannel(index, showOverlay = true) {
   
   if (showOverlay) {
     showOverlayWithTimeout();
-    showVideoControls();
   }
   
   // تشغيل القناة
@@ -1018,15 +1009,6 @@ function updateCurrentChannelIndicator(channel) {
   }, 3000);
 }
 
-// ===== إظهار أدوات تحكم الفيديو =====
-function showVideoControls() {
-  videoControls.classList.add('show');
-  clearTimeout(hideControlsTimer);
-  hideControlsTimer = setTimeout(() => {
-    videoControls.classList.remove('show');
-  }, 3000);
-}
-
 // ===== تشغيل القناة =====
 function playChannel(streamUrl) {
   // إظهار مؤشر التحميل
@@ -1039,22 +1021,31 @@ function playChannel(streamUrl) {
     hls = null;
   }
   
-  // إعدادات HLS محسنة للتلفاز
+  // إعدادات HLS محسنة للتلفاز الذكي
   const hlsConfig = {
     enableWorker: true,
     lowLatencyMode: true,
-    backBufferLength: 60,
-    maxBufferLength: 30,
-    maxBufferSize: 60 * 1000 * 1000,
+    backBufferLength: 50,
+    maxBufferLength: 25,
+    maxBufferSize: 50 * 1000 * 1000,
     maxFragLookUpTolerance: 0.2,
     liveSyncDurationCount: 3,
-    liveMaxLatencyDurationCount: 10,
-    abrEwmaFastLive: 3,
-    abrEwmaSlowLive: 9,
+    liveMaxLatencyDurationCount: 8,
+    abrEwmaFastLive: 2.5,
+    abrEwmaSlowLive: 8,
     startFragPrefetch: true,
     testBandwidth: true,
-    fpsDroppedMonitoringThreshold: 0.2,
-    fpsDroppedMonitoringPeriod: 5000
+    fpsDroppedMonitoringThreshold: 0.15,
+    fpsDroppedMonitoringPeriod: 3000,
+    manifestLoadingTimeOut: 10000,
+    manifestLoadingMaxRetry: 3,
+    manifestLoadingRetryDelay: 1000,
+    levelLoadingTimeOut: 10000,
+    levelLoadingMaxRetry: 4,
+    levelLoadingRetryDelay: 1000,
+    fragLoadingTimeOut: 20000,
+    fragLoadingMaxRetry: 6,
+    fragLoadingRetryDelay: 1000
   };
   
   // تشغيل HLS إذا مدعوم
@@ -1070,9 +1061,7 @@ function playChannel(streamUrl) {
       }
       
       video.play().catch(() => {
-        // إذا فشل التشغيل التلقائي
-        showHintTemporarily();
-        hintText.textContent = 'انقر للتشغيل';
+        // لا نعرض أي رسائل، فقط نترك الفيديو
       });
     });
     
@@ -1092,15 +1081,13 @@ function playChannel(streamUrl) {
     }
     
     video.play().catch(() => {
-      showHintTemporarily();
-      hintText.textContent = 'انقر للتشغيل';
+      // لا نعرض أي رسائل
     });
   }
   
   // تشغيل الصوت
   video.muted = false;
-  video.volume = parseFloat(volumeSlider.value);
-  updateMuteButton();
+  video.volume = 1;
 }
 
 // ===== إخفاء شاشة الترحيب =====
@@ -1126,17 +1113,11 @@ function showHintTemporarily() {
 function showOverlayWithTimeout() {
   overlay.classList.remove('hide');
   showHintTemporarily();
-  showVideoControls();
   
   clearTimeout(hideOverlayTimer);
   hideOverlayTimer = setTimeout(() => {
     overlay.classList.add('hide');
   }, 5000);
-}
-
-// ===== تحديث زر كتم الصوت =====
-function updateMuteButton() {
-  muteBtn.textContent = video.muted ? '🔇' : '🔊';
 }
 
 // ===== معالجة أخطاء البث =====
@@ -1226,17 +1207,14 @@ function setupEventListeners() {
       case ' ':
         if (video.paused) {
           video.play();
-          playPauseBtn.textContent = '⏸️';
         } else {
           video.pause();
-          playPauseBtn.textContent = '▶️';
         }
         showOverlayWithTimeout();
         break;
       case 'm':
       case 'M':
         video.muted = !video.muted;
-        updateMuteButton();
         showOverlayWithTimeout();
         break;
       case 'Escape':
@@ -1254,14 +1232,20 @@ function setupEventListeners() {
       case '=':
         if (video.volume < 1) {
           video.volume = Math.min(1, video.volume + 0.1);
-          volumeSlider.value = video.volume;
         }
         break;
       case '-':
       case '_':
         if (video.volume > 0) {
           video.volume = Math.max(0, video.volume - 0.1);
-          volumeSlider.value = video.volume;
+        }
+        break;
+      case 'f':
+      case 'F':
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
         }
         break;
     }
@@ -1303,69 +1287,14 @@ function setupEventListeners() {
   video.addEventListener('click', () => {
     if (video.paused) {
       video.play();
-      playPauseBtn.textContent = '⏸️';
     } else {
       video.pause();
-      playPauseBtn.textContent = '▶️';
     }
     showOverlayWithTimeout();
   });
   
-  // أدوات التحكم
-  playPauseBtn.addEventListener('click', () => {
-    if (video.paused) {
-      video.play();
-      playPauseBtn.textContent = '⏸️';
-    } else {
-      video.pause();
-      playPauseBtn.textContent = '▶️';
-    }
-    showVideoControls();
-  });
-  
-  muteBtn.addEventListener('click', () => {
-    video.muted = !video.muted;
-    updateMuteButton();
-    showVideoControls();
-    saveAppState();
-  });
-  
-  volumeSlider.addEventListener('input', () => {
-    video.volume = parseFloat(volumeSlider.value);
-    video.muted = video.volume === 0;
-    updateMuteButton();
-    saveAppState();
-  });
-  
-  volumeSlider.addEventListener('change', () => {
-    showVideoControls();
-  });
-  
-  fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {
-        showError('لا يدعم المتصفح وضع الملء الشاشة');
-      });
-    } else {
-      document.exitFullscreen();
-    }
-    showVideoControls();
-  });
-  
   // تغيير حجم الصوت مع الفيديو
-  video.addEventListener('volumechange', () => {
-    volumeSlider.value = video.volume;
-    updateMuteButton();
-  });
-  
-  // تغيير حالة التشغيل
-  video.addEventListener('play', () => {
-    playPauseBtn.textContent = '⏸️';
-  });
-  
-  video.addEventListener('pause', () => {
-    playPauseBtn.textContent = '▶️';
-  });
+  video.addEventListener('volumechange', saveAppState);
   
   // تأكيد الخروج
   document.getElementById('exitCancel').addEventListener('click', () => {
@@ -1402,6 +1331,20 @@ function setupEventListeners() {
     e.preventDefault();
     channelsList.scrollLeft += e.deltaY;
   });
+  
+  // التحكم في الصوت بالنقر المزدوج
+  let lastClickTime = 0;
+  video.addEventListener('click', (e) => {
+    const currentTime = new Date().getTime();
+    const timeSinceLastClick = currentTime - lastClickTime;
+    
+    if (timeSinceLastClick < 300) { // نقر مزدوج
+      video.muted = !video.muted;
+      showOverlayWithTimeout();
+    }
+    
+    lastClickTime = currentTime;
+  });
 }
 
 // ===== بدء التطبيق =====
@@ -1411,53 +1354,74 @@ if (document.readyState === 'loading') {
   initApp();
 }
 
-// ===== تحسينات للأجهزة التلفزيونية =====
+// ===== تحسينات متقدمة للتلفاز الذكي =====
 if (navigator.userAgent.includes('TV') || 
     navigator.userAgent.includes('Android TV') || 
     navigator.userAgent.includes('Google TV') ||
-    navigator.userAgent.includes('SmartTV')) {
+    navigator.userAgent.includes('SmartTV') ||
+    /TV|Tizen|webOS|NetCast|Boxee|Kylo|Roku|XBMC|Xbox|PLAYSTATION/i.test(navigator.userAgent)) {
   
-  document.body.classList.add('tv-mode');
-  document.documentElement.style.fontSize = '22px';
+  document.body.classList.add('tv-mode', 'performance-optimized');
+  document.documentElement.style.fontSize = '24px';
   
-  // تحسين الأداء للتلفاز
+  // تحسينات خاصة للتلفاز
   const style = document.createElement('style');
   style.textContent = `
-    .tv-mode * {
-      image-rendering: optimizeQuality;
-    }
-    .tv-mode video {
-      image-rendering: crisp-edges;
+    .tv-mode .overlay {
+      height: 170px;
+      padding: 15px 25px;
     }
     .tv-mode .card {
-      width: 240px;
+      width: 220px;
+      height: 140px;
     }
     .tv-mode .card-image-container {
-      height: 110px;
+      height: 80px;
     }
     .tv-mode .card span {
-      font-size: 18px;
+      font-size: 16px;
     }
     .tv-mode .hint {
       font-size: 20px;
       padding: 15px 30px;
+      left: 40px;
+    }
+    .tv-mode .current-channel {
+      right: 40px;
+      top: 30px;
+      padding: 15px 30px;
+    }
+    .tv-mode .current-channel-logo {
+      width: 40px;
+      height: 40px;
+    }
+    .tv-mode .current-channel-name {
+      font-size: 18px;
+    }
+    .tv-mode video {
+      image-rendering: crisp-edges;
     }
   `;
   document.head.appendChild(style);
+  
+  // إضافة تأثيرات خاصة للتلفاز
+  const tvEffect = document.createElement('div');
+  tvEffect.className = 'tv-focus-effect';
+  document.body.appendChild(tvEffect);
 }
 
-// ===== إدارة الذاكرة =====
+// ===== إدارة الذاكرة والتحسينات =====
 let cleanupInterval = setInterval(() => {
   if (hls && hls.media && hls.media.buffered.length > 0) {
     const currentTime = hls.media.currentTime;
     const bufferEnd = hls.media.buffered.end(0);
     
-    // تنظيف الذاكرة إذا كان هناك الكثير من البيانات المخزنة
-    if (bufferEnd - currentTime > 30) {
+    // تنظيف الذاكرة الزائدة
+    if (bufferEnd - currentTime > 25) {
       hls.media.currentTime = currentTime;
     }
   }
-}, 30000);
+}, 25000);
 
 // تنظيف عند إغلاق الصفحة
 window.addEventListener('unload', () => {
@@ -1467,6 +1431,50 @@ window.addEventListener('unload', () => {
   }
   saveAppState();
 });
+
+// اكتشاف وتعديل للتحكم عن بعد
+let lastRemoteKeyTime = 0;
+let remoteKeySequence = [];
+
+document.addEventListener('keydown', (e) => {
+  const currentTime = Date.now();
+  const timeSinceLastKey = currentTime - lastRemoteKeyTime;
+  
+  if (timeSinceLastKey > 2000) {
+    remoteKeySequence = [];
+  }
+  
+  remoteKeySequence.push(e.key);
+  lastRemoteKeyTime = currentTime;
+  
+  // اكتشاف أوامر التحكم عن بعد الشائعة
+  if (remoteKeySequence.length >= 3) {
+    const sequence = remoteKeySequence.slice(-3).join('');
+    
+    if (sequence.includes('ArrowUpArrowUpArrowDownArrowDown')) {
+      // Easter egg أو أوامر خاصة
+      showHintTemporarily();
+      hintText.textContent = '✨ تجربة تلفاز ذكية متكاملة ✨';
+      remoteKeySequence = [];
+    }
+  }
+});
+
+// تحسينات للعرض على التلفاز
+if ('matchMedia' in window) {
+  const mediaQuery = window.matchMedia('(min-width: 1920px) and (min-height: 1080px)');
+  
+  if (mediaQuery.matches) {
+    document.documentElement.style.fontSize = '26px';
+    
+    // زيادة حجم الكروت للشاشات الكبيرة
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+      card.style.width = '240px';
+      card.style.height = '150px';
+    });
+  }
+}
 </script>
 
 </body>
