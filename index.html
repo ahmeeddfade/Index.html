@@ -7,23 +7,29 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+/* ================= BASE ================= */
+*{margin:0;padding:0;box-sizing:border-box}
 html,body{
-  width:100%;height:100%;background:#000;overflow:hidden;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  width:100%;height:100%;
+  background:#000;overflow:hidden;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
   color:#fff
 }
 video{
-  position:fixed;inset:0;width:100%;height:100%;
-  object-fit:contain;background:#000;z-index:1
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  object-fit:contain;
+  background:#000;
+  z-index:1
 }
 
-/* Splash */
+/* ================= SPLASH ================= */
 #splash{
   position:fixed;inset:0;
   background:linear-gradient(135deg,#0a0a0a,#1a1a2e);
   display:flex;align-items:center;justify-content:center;
-  z-index:9999;transition:.8s
+  z-index:10;
+  transition:.6s
 }
 #splash.hide{opacity:0;pointer-events:none}
 #splash h1{
@@ -33,55 +39,72 @@ video{
   -webkit-text-fill-color:transparent
 }
 
-/* Hint */
-.hint{
-  position:fixed;top:22px;left:28px;
-  font-size:14px;opacity:0;transition:.3s;
-  background:rgba(0,0,0,.6);
-  padding:6px 14px;border-radius:20px;
-  z-index:5;pointer-events:none
-}
-.hint.show{opacity:.7}
-
-/* Overlay */
-.overlay{
-  position:fixed;bottom:0;left:0;width:100%;
-  padding:8px 20px;
+/* ================= OVERLAY ================= */
+#overlay{
+  position:fixed;
+  bottom:0;left:0;width:100%;
+  padding:8px 22px;
   background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
   display:flex;justify-content:center;
-  transition:.3s;z-index:3
+  transition:.25s;
+  z-index:5
 }
-.overlay.hide{opacity:0;transform:translateY(20px);pointer-events:none}
+#overlay.hide{opacity:0;transform:translateY(20px);pointer-events:none}
 
-/* Channels */
-.channels{
-  display:flex;gap:12px;align-items:center;
-  max-width:95%;overflow-x:auto;
-  direction:ltr;scrollbar-width:none
+/* ================= CHANNEL LIST ================= */
+#channels{
+  display:flex;
+  gap:12px;
+  max-width:95%;
+  overflow-x:auto;
+  direction:ltr;
+  scrollbar-width:none
 }
-.channels::-webkit-scrollbar{display:none}
+#channels::-webkit-scrollbar{display:none}
 
-/* Card */
-.card{
-  width:180px;padding:8px;
+/* ================= CARD ================= */
+.channel{
+  width:180px;
+  padding:8px;
   border-radius:16px;
   background:rgba(255,255,255,.07);
-  text-align:center;cursor:pointer;
-  transition:.25s;flex-shrink:0
+  text-align:center;
+  cursor:pointer;
+  transition:.25s;
+  flex-shrink:0
 }
-.card img{
-  width:100%;height:62px;object-fit:contain
+.channel img{
+  width:100%;
+  height:62px;
+  object-fit:contain
 }
-.card span{
-  display:block;margin-top:4px;
-  font-size:14px;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis
+.channel span{
+  display:block;
+  margin-top:4px;
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
 }
-.card.active{
+.channel.active{
   background:linear-gradient(135deg,#ff6f00,#ff8f00);
   transform:scale(1.15);
   box-shadow:0 10px 30px rgba(255,111,0,.4)
 }
+
+/* ================= HINT ================= */
+#hint{
+  position:fixed;
+  top:20px;left:24px;
+  background:rgba(0,0,0,.6);
+  padding:6px 14px;
+  border-radius:20px;
+  font-size:14px;
+  opacity:0;
+  transition:.3s;
+  z-index:6
+}
+#hint.show{opacity:.7}
 </style>
 </head>
 
@@ -89,132 +112,151 @@ video{
 
 <div id="splash"><h1>ElAhmad TV</h1></div>
 <video id="player" autoplay playsinline></video>
-<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
 
-<div class="overlay hide" id="overlay">
-  <div class="channels" id="channels"></div>
+<div id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
+
+<div id="overlay">
+  <div id="channels"></div>
 </div>
 
 <script>
-const CHANNELS_URL="channels.json";
-const video=document.getElementById("player");
-const overlay=document.getElementById("overlay");
-const list=document.getElementById("channels");
-const splash=document.getElementById("splash");
-const hint=document.getElementById("hint");
+/* ================= CONFIG ================= */
+const CHANNELS_URL = "channels.json";
+const STORAGE_KEY  = "elahmad_last_channel";
 
-let hls=null,index=0,channels=[];
-let hideTimer=null,exitCount=0,splashHidden=false;
-const STORAGE="elahmad_last_channel";
+/* ================= STATE ================= */
+const state = {
+  index: 0,
+  channels: [],
+  overlayVisible: true,
+  exitArmed: false
+};
 
-/* ===== Wuffy ===== */
-function openWuffy(url){
-  const encoded=btoa(url);
-  location.href=`intent://${encoded}#Intent;scheme=xmtv;package=co.wuffy.player;end`;
-}
+/* ================= ELEMENTS ================= */
+const video   = document.getElementById("player");
+const splash  = document.getElementById("splash");
+const overlay = document.getElementById("overlay");
+const list    = document.getElementById("channels");
+const hint    = document.getElementById("hint");
 
-/* ===== Play ===== */
-function play(channel){
-  if(channel.type==="wuffy"){
-    openWuffy(channel.stream);
-    return;
-  }
+/* ================= PLAYER ================= */
+let hls = null;
+
+function playChannel(ch){
   if(hls){hls.destroy();hls=null}
   if(Hls.isSupported()){
-    hls=new Hls({lowLatencyMode:true});
-    hls.loadSource(channel.stream);
+    hls = new Hls({
+      lowLatencyMode:true,
+      maxBufferLength:30,
+      backBufferLength:60
+    });
+    hls.loadSource(ch.stream);
     hls.attachMedia(video);
-  }else video.src=channel.stream;
-
-  video.play().catch(()=>{});
-  if(!splashHidden){
-    setTimeout(()=>{
-      splash.classList.add("hide");
-      splashHidden=true;
-    },3000);
+  }else{
+    video.src = ch.stream;
   }
+  video.play().catch(()=>{});
+  localStorage.setItem(STORAGE_KEY,state.index);
+  hideSplash();
 }
 
-/* ===== Overlay ===== */
+/* ================= UI ================= */
+function render(){
+  [...list.children].forEach((el,i)=>{
+    el.classList.toggle("active", i===state.index);
+  });
+  list.children[state.index]?.scrollIntoView({
+    behavior:"smooth",inline:"center"
+  });
+}
+
 function showOverlay(){
   overlay.classList.remove("hide");
   hint.classList.add("show");
-  clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>{
+  clearTimeout(showOverlay.timer);
+  showOverlay.timer = setTimeout(()=>{
     overlay.classList.add("hide");
     hint.classList.remove("show");
   },4000);
 }
 
-/* ===== Focus ===== */
-function focus(){
-  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-  const card=list.children[index];
-  if(card){
-    card.classList.add("active");
-    card.scrollIntoView({behavior:"smooth",inline:"center"});
-    play(channels[index]);
-    localStorage.setItem(STORAGE,index);
+/* ================= SPLASH ================= */
+function hideSplash(){
+  if(!hideSplash.done){
+    hideSplash.done = true;
+    setTimeout(()=>splash.classList.add("hide"),3000);
   }
 }
 
-/* ===== Load ===== */
-fetch(CHANNELS_URL).then(r=>r.json()).then(d=>{
-  channels=d.channels||[];
-  channels.forEach((c,i)=>{
-    const el=document.createElement("div");
-    el.className="card";
-    el.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-    el.onclick=()=>{index=i;focus();showOverlay()};
-    el.ontouchend=el.onclick;
-    list.appendChild(el);
-  });
-  const saved=+localStorage.getItem(STORAGE);
-  if(saved>=0&&channels[saved]) index=saved;
-  focus();showOverlay();
-});
+/* ================= NAVIGATION ================= */
+function select(index){
+  state.index = (index + state.channels.length) % state.channels.length;
+  render();
+  playChannel(state.channels[state.index]);
+  showOverlay();
+}
 
-/* ===== Remote ===== */
+/* ================= INPUT ================= */
 document.addEventListener("keydown",e=>{
-  if(!channels.length)return;
+  if(!state.channels.length)return;
+
   if(["ArrowRight","ArrowLeft","ArrowUp"].includes(e.key)){
-    e.preventDefault();showOverlay();
+    e.preventDefault();
+    showOverlay();
   }
-  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
-  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
+
+  if(e.key==="ArrowRight") select(state.index+1);
+  if(e.key==="ArrowLeft")  select(state.index-1);
+
   if(e.key==="Backspace"||e.key==="Escape"){
-    exitCount++;
-    if(exitCount>=2){
+    if(state.exitArmed){
       if(hls)hls.destroy();
       window.close();
     }else{
+      state.exitArmed=true;
       hint.textContent="اضغط مرة أخرى للخروج";
       hint.classList.add("show");
-      setTimeout(()=>hint.textContent="⬅️➡️ تغيير القناة | ⬆️ القائمة",2000);
+      setTimeout(()=>{
+        state.exitArmed=false;
+        hint.textContent="⬅️➡️ تغيير القناة | ⬆️ القائمة";
+      },2000);
     }
   }
 });
 
-/* ===== Voice (رياضة / أخبار) ===== */
-if("webkitSpeechRecognition"in window){
-  const rec=new webkitSpeechRecognition();
-  rec.lang="ar";
-  document.addEventListener("keydown",e=>{
-    if(e.key==="Search") rec.start();
+/* Touch */
+let startX=0;
+document.addEventListener("touchstart",e=>{
+  startX=e.touches[0].clientX;
+  showOverlay();
+});
+document.addEventListener("touchend",e=>{
+  const dx=e.changedTouches[0].clientX-startX;
+  if(Math.abs(dx)>60){
+    select(dx<0?state.index+1:state.index-1);
+  }
+});
+
+/* Mouse */
+document.addEventListener("mousemove",showOverlay);
+
+/* ================= LOAD ================= */
+fetch(CHANNELS_URL).then(r=>r.json()).then(d=>{
+  state.channels = d.channels || [];
+  const saved = +localStorage.getItem(STORAGE_KEY);
+  if(saved>=0) state.index = saved;
+
+  state.channels.forEach((c,i)=>{
+    const el=document.createElement("div");
+    el.className="channel";
+    el.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+    el.onclick=()=>select(i);
+    list.appendChild(el);
   });
-  rec.onresult=e=>{
-    const t=e.results[0][0].transcript;
-    const map={
-      "رياضة 1":"الرياضة 1",
-      "الجزيرة":"الجزيرة",
-      "الحدث":"الحدث"
-    };
-    const name=map[t];
-    if(!name)return;
-    const i=channels.findIndex(c=>c.name.includes(name));
-    if(i>-1){index=i;focus();showOverlay();}
-  };
-}
+
+  select(state.index);
+});
 </script>
+
 </body>
 </html>
