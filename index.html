@@ -8,302 +8,282 @@
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+/* ================= BASE ================= */
+*{margin:0;padding:0;box-sizing:border-box}
 html,body{
   width:100%;height:100%;
-  background:#000;overflow:hidden;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:#000;
+  font-family:system-ui,Segoe UI,Roboto;
+  overflow:hidden;
   color:#fff;
 }
 
-/* ===== Splash ===== */
+/* ================= SPLASH ================= */
 #splash{
   position:fixed;inset:0;
-  background:linear-gradient(135deg,#0b0b0b,#1c1c2d);
+  background:radial-gradient(circle at center,#1a1a2e,#000);
   display:flex;align-items:center;justify-content:center;
   z-index:9999;
   transition:opacity .8s ease;
 }
 #splash.hide{opacity:0;pointer-events:none}
-#splash h1{
-  font-size:3rem;
-  background:linear-gradient(90deg,#ff6f00,#ffb300);
+.splash-box{text-align:center}
+.splash-box h1{
+  font-size:64px;
+  background:linear-gradient(90deg,#ff6f00,#ffbb00);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
 }
-#splash p{opacity:.7;margin-top:12px}
+.splash-box p{opacity:.8;margin-top:10px}
 
-/* ===== Video ===== */
+/* ================= VIDEO ================= */
 video{
   position:fixed;inset:0;
   width:100%;height:100%;
   object-fit:contain;
   background:#000;
-  z-index:1;
 }
 
-/* ===== Hint ===== */
-.hint{
+/* ================= HINT ================= */
+#hint{
   position:fixed;
-  top:22px;left:28px;
-  font-size:13px;
+  top:25px;left:30px;
+  background:rgba(0,0,0,.7);
+  padding:10px 22px;
+  border-radius:25px;
+  font-size:14px;
   opacity:0;
   transition:.3s;
-  z-index:4;
-  background:rgba(0,0,0,.55);
-  padding:6px 14px;
-  border-radius:20px;
-  backdrop-filter:blur(6px);
-  pointer-events:none;
+  z-index:10;
 }
+#hint.show{opacity:.7}
 
-/* ===== Overlay ===== */
-.overlay{
+/* ================= OVERLAY ================= */
+#overlay{
   position:fixed;
-  bottom:0;left:0;
-  width:100%;
-  padding:6px 18px;        /* نحيف جدًا */
-  background:linear-gradient(to top,rgba(0,0,0,.9),transparent);
-  z-index:3;
-  transition:.35s;
-  display:flex;justify-content:center;
+  bottom:0;left:0;width:100%;
+  padding:8px 20px;
+  background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
+  backdrop-filter:blur(20px);
+  transition:.4s;
 }
-.overlay.hide{
-  opacity:0;
-  transform:translateY(25px);
-  pointer-events:none;
-}
+#overlay.hide{transform:translateY(100%);opacity:0}
 
-/* ===== Channels ===== */
-.channels{
+#channels{
   display:flex;
   gap:14px;
-  align-items:center;
+  justify-content:center;
   overflow-x:auto;
-  max-width:96%;
-  padding:2px 0;
   scrollbar-width:none;
-  direction:ltr;
 }
-.channels::-webkit-scrollbar{display:none}
+#channels::-webkit-scrollbar{display:none}
 
-/* ===== Card ===== */
+/* ================= CARDS ================= */
 .card{
-  width:190px;
+  width:180px;
   padding:8px;
   border-radius:16px;
   background:rgba(255,255,255,.06);
   text-align:center;
-  flex-shrink:0;
-  transition:.25s;
-  backdrop-filter:blur(14px);
-  filter:blur(2px);        /* blur افتراضي */
+  opacity:.6;
+  filter:blur(.6px);
+  transition:.3s;
 }
 .card img{
+  height:80px;
   width:100%;
-  height:64px;             /* صورة أكبر */
   object-fit:contain;
 }
 .card span{
+  font-size:13px;
   display:block;
-  margin-top:4px;
-  font-size:14px;          /* اسم أصغر */
-  opacity:.85;
+  margin-top:6px;
 }
-
-/* Active */
 .card.active{
-  background:linear-gradient(135deg,#ff6f00,#ff9100);
-  transform:scale(1.15);
+  background:linear-gradient(135deg,#ff6f00,#ff8f00);
+  transform:scale(1.18);
+  opacity:1;
   filter:none;
-  box-shadow:0 14px 40px rgba(255,111,0,.45);
-  z-index:2;
+  box-shadow:0 20px 60px rgba(255,111,0,.6);
 }
-.card.active span{opacity:1;font-weight:600}
+.card.active span{font-weight:700}
 
-/* ===== Settings ===== */
-.settings{
+/* ================= CURRENT ================= */
+#current{
   position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.85);
+  top:25px;right:30px;
+  background:rgba(0,0,0,.8);
+  padding:10px 22px;
+  border-radius:25px;
   display:flex;
+  gap:12px;
+  align-items:center;
+  opacity:0;
+  transition:.3s;
+}
+#current.show{opacity:1}
+#current img{height:32px}
+
+/* ================= SETTINGS ================= */
+#settings{
+  position:fixed;
+  right:30px;top:50%;
+  transform:translateY(-50%) translateX(120%);
+  background:rgba(0,0,0,.9);
+  padding:25px;
+  width:300px;
+  border-radius:20px;
+  transition:.4s;
+}
+#settings.show{transform:translateY(-50%) translateX(0)}
+.setting{display:flex;justify-content:space-between;margin:15px 0}
+
+/* ================= EXIT ================= */
+#exit{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
   align-items:center;
   justify-content:center;
-  z-index:9998;
 }
-.settings.hidden{display:none}
-.settings-box{
+#exit.show{display:flex}
+.exit-box{
   background:#111;
-  padding:28px 34px;
+  padding:30px;
   border-radius:20px;
-  min-width:320px;
   text-align:center;
 }
-.settings-box h2{margin-bottom:20px}
-.settings-box button{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border:none;
-  border-radius:10px;
-  background:#ff6f00;
-  color:#fff;
-  font-size:16px;
-  cursor:pointer;
+.exit-box button{
+  margin:10px;
+  padding:10px 30px;
+  border:none;border-radius:12px;
 }
+
+/* ================= LOADING ================= */
+#loading{
+  position:fixed;inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.6);
+}
+#loading.show{display:flex}
 </style>
 </head>
 
 <body>
 
-<!-- Splash -->
 <div id="splash">
-  <div>
+  <div class="splash-box">
     <h1>ElAhmad TV</h1>
-    <p>مشاهدة ممتعة 📺</p>
+    <p>تجربة تلفزيونية ذكية</p>
   </div>
 </div>
 
-<!-- Video -->
-<video id="player" autoplay playsinline></video>
+<div id="loading">جاري التحميل...</div>
 
-<!-- Hint -->
-<div class="hint" id="hint">⬅️➡️ تغيير القناة | ⬆️ القائمة</div>
+<video id="video" autoplay playsinline></video>
 
-<!-- Overlay -->
-<div class="overlay hide" id="overlay">
-  <div class="channels" id="channels"></div>
+<div id="hint">⬅️ ➡️ تغيير القناة | ⬆️ القائمة</div>
+
+<div id="current">
+  <img id="currentLogo">
+  <span id="currentName"></span>
 </div>
 
-<!-- Settings -->
-<div class="settings hidden" id="settings">
-  <div class="settings-box">
-    <h2>⚙️ الإعدادات</h2>
-    <button onclick="clearSaved()">مسح آخر قناة</button>
-    <button onclick="location.reload()">إعادة تشغيل</button>
-    <button onclick="exitApp()">خروج</button>
+<div id="overlay" class="hide">
+  <div id="channels"></div>
+</div>
+
+<div id="settings">
+  <h3>الإعدادات</h3>
+  <div class="setting"><span>التحكم الصوتي</span><input type="checkbox" id="voice"></div>
+  <div class="setting"><span>حفظ تلقائي</span><input type="checkbox" checked></div>
+</div>
+
+<div id="exit">
+  <div class="exit-box">
+    <p>هل تريد الخروج؟</p>
+    <button onclick="hideExit()">إلغاء</button>
+    <button onclick="closeApp()">خروج</button>
   </div>
 </div>
 
 <script>
-const video=document.getElementById("player");
-const overlay=document.getElementById("overlay");
-const list=document.getElementById("channels");
-const hint=document.getElementById("hint");
-const splash=document.getElementById("splash");
-const settings=document.getElementById("settings");
+const video=document.getElementById('video');
+const overlay=document.getElementById('overlay');
+const hint=document.getElementById('hint');
+const splash=document.getElementById('splash');
+const loading=document.getElementById('loading');
+const channelsBox=document.getElementById('channels');
+const current=document.getElementById('current');
+const currentLogo=document.getElementById('currentLogo');
+const currentName=document.getElementById('currentName');
+const settings=document.getElementById('settings');
+const exitBox=document.getElementById('exit');
 
-let hls=null,index=0,channels=[],hideTimer=null,firstPlay=true;
-const CHANNELS_URL="channels.json";
+let hls,index=0,channels=[];
+const SAVE_KEY="elahmad_last";
 
-/* ===== Play ===== */
-function play(url){
-  if(hls){hls.destroy();hls=null}
-  if(Hls.isSupported()){
-    hls=new Hls({
-      enableWorker:true,
-      lowLatencyMode:false,
-      backBufferLength:120,
-      maxBufferLength:60,
-      liveSyncDuration:3
-    });
-    hls.loadSource(url);
-    hls.attachMedia(video);
-  }else video.src=url;
-
-  video.play().catch(()=>{});
-  localStorage.setItem("lastChannel",index);
-
-  if(firstPlay){
-    setTimeout(()=>splash.classList.add("hide"),3000);
-    firstPlay=false;
-  }
-}
-
-/* ===== Focus ===== */
-function focus(){
-  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
-  const c=list.children[index];
-  if(c){
-    c.classList.add("active");
-    c.scrollIntoView({inline:"center",behavior:"smooth"});
-    play(channels[index].stream);
-  }
-}
-
-/* ===== Overlay ===== */
-function showOverlay(){
-  overlay.classList.remove("hide");
-  hint.style.opacity=".6";
-  clearTimeout(hideTimer);
-  hideTimer=setTimeout(()=>{
-    overlay.classList.add("hide");
-    hint.style.opacity="0";
-  },4000);
-}
-
-/* ===== Load ===== */
-fetch(CHANNELS_URL).then(r=>r.json()).then(d=>{
+fetch('channels.json').then(r=>r.json()).then(d=>{
   channels=d.channels;
-  channels.forEach((ch,i)=>{
-    const c=document.createElement("div");
-    c.className="card";
-    c.innerHTML=`<img src="${ch.logo}"><span>${ch.name}</span>`;
-    c.onclick=()=>{index=i;focus();showOverlay()};
-    list.appendChild(c);
-  });
-  const saved=localStorage.getItem("lastChannel");
-  if(saved!==null) index=parseInt(saved);
-  focus();
+  const saved=localStorage.getItem(SAVE_KEY);
+  if(saved) index=+saved;
+  render();
+  play(index);
 });
 
-/* ===== Remote ===== */
-let backOnce=false;
-document.addEventListener("keydown",e=>{
-  if(e.key.startsWith("Arrow")) showOverlay();
-
-  if(e.key==="ArrowRight"){index=(index+1)%channels.length;focus()}
-  if(e.key==="ArrowLeft"){index=(index-1+channels.length)%channels.length;focus()}
-  if(e.key==="ArrowUp"){overlay.classList.toggle("hide")}
-  if(e.key==="Escape"||e.key==="Backspace"){
-    if(!overlay.classList.contains("hide")){
-      overlay.classList.add("hide");
-    }else{
-      if(backOnce) exitApp();
-      backOnce=true;
-      setTimeout(()=>backOnce=false,2000);
-    }
-  }
-});
-
-/* ===== Voice ===== */
-if('webkitSpeechRecognition'in window){
-  const rec=new webkitSpeechRecognition();
-  rec.lang="ar";
-  rec.onresult=e=>{
-    const txt=e.results[0][0].transcript.toLowerCase();
-    const i=channels.findIndex(c=>c.name.toLowerCase().includes(txt));
-    if(i>-1){index=i;focus();showOverlay()}
-  };
-  document.addEventListener("keydown",e=>{
-    if(e.key==="Microphone") rec.start();
+function render(){
+  channelsBox.innerHTML='';
+  channels.forEach((c,i)=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+    card.onclick=()=>{index=i;play(i);showOverlay()};
+    channelsBox.appendChild(card);
   });
 }
 
-/* ===== Settings ===== */
-let hold=null;
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowDown"){
-    hold=setTimeout(()=>settings.classList.toggle("hidden"),2000);
-  }
-});
-document.addEventListener("keyup",()=>clearTimeout(hold));
+function play(i){
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  channelsBox.children[i].classList.add('active');
+  localStorage.setItem(SAVE_KEY,i);
 
-function clearSaved(){localStorage.removeItem("lastChannel");alert("تم المسح")}
-function exitApp(){
-  if(window.Android) Android.finish();
-  else window.close();
+  currentLogo.src=channels[i].logo;
+  currentName.textContent=channels[i].name;
+  current.classList.add('show');
+  setTimeout(()=>current.classList.remove('show'),3000);
+
+  loading.classList.add('show');
+  if(hls){hls.destroy()}
+  if(Hls.isSupported()){
+    hls=new Hls({lowLatencyMode:true});
+    hls.loadSource(channels[i].stream);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+      loading.classList.remove('show');
+      setTimeout(()=>splash.classList.add('hide'),3000);
+    });
+  }
 }
+
+function showOverlay(){
+  overlay.classList.remove('hide');
+  hint.classList.add('show');
+  setTimeout(()=>overlay.classList.add('hide'),5000);
+  setTimeout(()=>hint.classList.remove('show'),4000);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'){index=(index+1)%channels.length;play(index);showOverlay()}
+  if(e.key==='ArrowLeft'){index=(index-1+channels.length)%channels.length;play(index);showOverlay()}
+  if(e.key==='ArrowUp'){showOverlay()}
+  if(e.key==='Backspace'){exitBox.classList.add('show')}
+  if(e.key==='s'){settings.classList.toggle('show')}
+});
+
+function hideExit(){exitBox.classList.remove('show')}
+function closeApp(){window.close()}
 </script>
 
 </body>
