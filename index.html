@@ -18,8 +18,8 @@ body{
 video{
     width:100%;
     height:100%;
-    object-fit:contain; /* لا نقص */
-    padding-bottom:5vh; /* حماية شريط الأخبار */
+    object-fit:contain;
+    padding-bottom:5vh;
     background:#000;
 }
 
@@ -46,11 +46,11 @@ video{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== LOGO (LEFT) ===== */
+/* ===== LOGO OVERLAY (LEFT) ===== */
 #logoOverlay{
     position:fixed;
     top:18px;
-    left:18px; /* تم النقل لليسار */
+    left:18px;
     background:rgba(0,0,0,.35);
     backdrop-filter:blur(10px);
     padding:8px;
@@ -65,179 +65,112 @@ video{
     height:48px;
     object-fit:contain;
 }
-
-/* ===== CHANNEL BAR ===== */
-#channels{
-    position:fixed;
-    bottom:0;
-    left:0;
-    width:100%;
-    display:flex;
-    gap:10px;
-    padding:14px;
-    background:linear-gradient(to top,rgba(0,0,0,.92),transparent);
-    overflow-x:auto;
-    transform:translateY(100%);
-    transition:.35s;
-    z-index:50;
-}
-#channels.show{transform:translateY(0)}
-#channels::-webkit-scrollbar{display:none}
-
-.channel{
-    width:120px;
-    flex:0 0 auto;
-    background:rgba(255,255,255,.08);
-    border-radius:14px;
-    padding:10px;
-    cursor:pointer;
-    transition:.25s;
-    border:2px solid transparent;
-}
-.channel.active{
-    border-color:#ff8c00;
-    background:rgba(255,140,0,.25);
-}
-.channel img{
-    width:100%;
-    height:60px;
-    object-fit:contain;
-}
-
-/* ===== HINT ===== */
-#hint{
-    position:fixed;
-    bottom:130px;
-    left:50%;
-    transform:translateX(-50%);
-    background:rgba(0,0,0,.6);
-    padding:8px 18px;
-    border-radius:20px;
-    font-size:14px;
-    color:#fff;
-    opacity:0;
-    transition:.3s;
-}
-#hint.show{opacity:1}
 </style>
 </head>
 
 <body>
 
+<!-- LOADING -->
 <div id="loading">
     <div class="loader"></div>
     <div style="color:#ff8c00;font-size:22px">ElAhmad TV</div>
 </div>
 
+<!-- VIDEO -->
 <video id="video" playsinline></video>
 
-<!-- LOGO LEFT -->
+<!-- LOGO -->
 <div id="logoOverlay">
     <img id="logoImg">
 </div>
 
-<!-- CHANNEL BAR -->
-<div id="channels"></div>
-
-<div id="hint">⬆️ القائمة | ⬅️ ➡️ تغيير القناة</div>
-
 <script>
-const video=document.getElementById('video');
-const loading=document.getElementById('loading');
-const channelsBox=document.getElementById('channels');
-const logoOverlay=document.getElementById('logoOverlay');
-const logoImg=document.getElementById('logoImg');
-const hint=document.getElementById('hint');
+const video = document.getElementById('video');
+const loading = document.getElementById('loading');
+const logoOverlay = document.getElementById('logoOverlay');
+const logoImg = document.getElementById('logoImg');
 
-let channels=[],index=0,hls=null,hideTimer;
+let channels = [];
+let index = 0;
+let hls = null;
+let hideTimer = null;
 
 /* LOAD CHANNELS */
 fetch('channels.json')
 .then(r=>r.json())
 .then(d=>{
-    channels=d.channels||[];
-    build();
-    index=parseInt(localStorage.getItem('last'))||0;
+    channels = d.channels || [];
+    index = parseInt(localStorage.getItem('last')) || 0;
     play();
 });
 
-/* BUILD CHANNEL BAR */
-function build(){
-    channelsBox.innerHTML='';
-    channels.forEach((c,i)=>{
-        const el=document.createElement('div');
-        el.className='channel';
-        el.innerHTML=`<img src="${c.logo}">`;
-        el.onclick=()=>select(i);
-        channelsBox.appendChild(el);
-    });
-}
-
 /* PLAY CHANNEL */
 function play(){
-    if(hls){hls.destroy();hls=null}
-    const c=channels[index];
-    localStorage.setItem('last',index);
+    if(!channels[index]) return;
 
-    document.querySelectorAll('.channel').forEach((e,i)=>{
-        e.classList.toggle('active',i===index);
-    });
+    if(hls){ hls.destroy(); hls=null; }
 
-    logoImg.src=c.logo;
-    showOverlay();
+    const c = channels[index];
+    localStorage.setItem('last', index);
+
+    logoImg.src = c.logo;
+    showLogo();
 
     if(Hls.isSupported()){
-        hls=new Hls({lowLatencyMode:true});
+        hls = new Hls({ lowLatencyMode:true });
         hls.loadSource(c.stream);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().catch(()=>{}));
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+            video.play().catch(()=>{});
+        });
     }else{
-        video.src=c.stream;
+        video.src = c.stream;
         video.play().catch(()=>{});
     }
 }
 
-/* UI */
-function showOverlay(){
+/* SHOW / HIDE LOGO */
+function showLogo(){
     logoOverlay.classList.add('show');
-    channelsBox.classList.add('show');
-    hint.classList.add('show');
-
     clearTimeout(hideTimer);
-    hideTimer=setTimeout(()=>{
+    hideTimer = setTimeout(()=>{
         logoOverlay.classList.remove('show');
-        channelsBox.classList.remove('show');
-        hint.classList.remove('show');
-    },4000);
-}
-function select(i){
-    index=i;
-    play();
+    },3000);
 }
 
-/* EVENTS */
-video.addEventListener('playing',()=>loading.classList.add('hidden'));
-setTimeout(()=>loading.classList.add('hidden'),8000);
-
-/* REMOTE */
+/* REMOTE CONTROL */
 document.addEventListener('keydown',e=>{
-    if(e.key==='ArrowRight')select((index+1)%channels.length);
-    if(e.key==='ArrowLeft')select((index-1+channels.length)%channels.length);
-    if(e.key==='ArrowUp')showOverlay();
+    if(e.key==='ArrowRight'){
+        index = (index+1)%channels.length;
+        play();
+    }
+    if(e.key==='ArrowLeft'){
+        index = (index-1+channels.length)%channels.length;
+        play();
+    }
+    if(e.key==='ArrowUp'){
+        showLogo();
+    }
 });
 
-/* TOUCH + MOUSE */
+/* TOUCH + MOUSE SUPPORT */
 let startY=0;
 document.addEventListener('touchstart',e=>{
     startY=e.touches[0].clientY;
 },{passive:true});
+
 document.addEventListener('touchmove',e=>{
     if(startY>window.innerHeight-120 && startY-e.touches[0].clientY>40){
-        showOverlay();
+        showLogo();
     }
 },{passive:true});
-document.addEventListener('touchend',()=>showOverlay());
-document.addEventListener('mousemove',()=>showOverlay());
+
+document.addEventListener('touchend',()=>showLogo());
+document.addEventListener('mousemove',()=>showLogo());
+
+/* LOADING SAFE EXIT */
+video.addEventListener('playing',()=>loading.classList.add('hidden'));
+setTimeout(()=>loading.classList.add('hidden'),8000);
 </script>
 
 </body>
