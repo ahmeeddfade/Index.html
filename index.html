@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ElAhmad TV</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 
@@ -14,13 +14,13 @@ body{
     font-family:Segoe UI,Tahoma,sans-serif;
 }
 
-/* ===== VIDEO (SAFE FOR NEWS TICKER) ===== */
+/* ===== VIDEO (SAFE MODE) ===== */
 video{
     width:100%;
     height:100%;
-    object-fit:contain; /* لا نقص */
-    padding-bottom:5vh; /* حماية شريط الأخبار */
+    object-fit:contain;
     background:#000;
+    padding-bottom:5vh; /* حماية شريط الأخبار */
 }
 
 /* ===== LOADING ===== */
@@ -37,20 +37,20 @@ video{
 }
 #loading.hidden{opacity:0;pointer-events:none}
 .loader{
-    width:46px;height:46px;
+    width:44px;height:44px;
     border:3px solid rgba(255,140,0,.3);
     border-top-color:#ff8c00;
     border-radius:50%;
     animation:spin 1s linear infinite;
-    margin-bottom:14px;
+    margin-bottom:12px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== LOGO (LEFT) ===== */
+/* ===== LOGO LEFT ===== */
 #logoOverlay{
     position:fixed;
     top:18px;
-    left:18px; /* تم النقل لليسار */
+    left:18px;
     background:rgba(0,0,0,.35);
     backdrop-filter:blur(10px);
     padding:8px;
@@ -61,8 +61,8 @@ video{
 }
 #logoOverlay.show{opacity:1}
 #logoOverlay img{
-    width:48px;
-    height:48px;
+    width:44px;
+    height:44px;
     object-fit:contain;
 }
 
@@ -85,7 +85,7 @@ video{
 #channels::-webkit-scrollbar{display:none}
 
 .channel{
-    width:120px;
+    width:110px;
     flex:0 0 auto;
     background:rgba(255,255,255,.08);
     border-radius:14px;
@@ -100,7 +100,7 @@ video{
 }
 .channel img{
     width:100%;
-    height:60px;
+    height:56px;
     object-fit:contain;
 }
 
@@ -131,25 +131,21 @@ video{
 
 <video id="video" playsinline></video>
 
-<!-- LOGO LEFT -->
-<div id="logoOverlay">
-    <img id="logoImg">
-</div>
-
-<!-- CHANNEL BAR -->
+<div id="logoOverlay"><img id="logoImg"></div>
 <div id="channels"></div>
+<div id="hint">⬆️ القنوات | ⬅️ ➡️ تبديل</div>
 
 <script>
-const video=document.getElementById('video');
-const loading=document.getElementById('loading');
-const channelsBox=document.getElementById('channels');
-const logoOverlay=document.getElementById('logoOverlay');
-const logoImg=document.getElementById('logoImg');
-const hint=document.getElementById('hint');
+const video = document.getElementById('video');
+const loading = document.getElementById('loading');
+const channelsBox = document.getElementById('channels');
+const logoOverlay = document.getElementById('logoOverlay');
+const logoImg = document.getElementById('logoImg');
+const hint = document.getElementById('hint');
 
 let channels=[],index=0,hls=null,hideTimer;
 
-/* LOAD CHANNELS */
+/* ===== LOAD CHANNELS ===== */
 fetch('channels.json')
 .then(r=>r.json())
 .then(d=>{
@@ -159,7 +155,7 @@ fetch('channels.json')
     play();
 });
 
-/* BUILD CHANNEL BAR */
+/* ===== BUILD UI ===== */
 function build(){
     channelsBox.innerHTML='';
     channels.forEach((c,i)=>{
@@ -171,9 +167,10 @@ function build(){
     });
 }
 
-/* PLAY CHANNEL */
+/* ===== PLAY CHANNEL (OPTIMIZED) ===== */
 function play(){
-    if(hls){hls.destroy();hls=null}
+    cleanupPlayer();
+
     const c=channels[index];
     localStorage.setItem('last',index);
 
@@ -185,17 +182,47 @@ function play(){
     showOverlay();
 
     if(Hls.isSupported()){
-        hls=new Hls({lowLatencyMode:true});
+        hls=new Hls({
+            enableWorker:true,
+            lowLatencyMode:true,
+            backBufferLength:30,
+            maxBufferLength:20,
+            maxBufferSize:30*1000*1000,
+            liveSyncDurationCount:3,
+            liveMaxLatencyDurationCount:8
+        });
+
         hls.loadSource(c.stream);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().catch(()=>{}));
+
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+            video.play().catch(()=>{});
+        });
+
+        hls.on(Hls.Events.ERROR,(e,d)=>{
+            if(d.fatal){
+                cleanupPlayer();
+                setTimeout(play,2000);
+            }
+        });
     }else{
         video.src=c.stream;
         video.play().catch(()=>{});
     }
 }
 
-/* UI */
+/* ===== CLEANUP (RAM SAFE) ===== */
+function cleanupPlayer(){
+    if(hls){
+        hls.destroy();
+        hls=null;
+    }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+}
+
+/* ===== UI ===== */
 function showOverlay(){
     logoOverlay.classList.add('show');
     channelsBox.classList.add('show');
@@ -208,34 +235,39 @@ function showOverlay(){
         hint.classList.remove('show');
     },4000);
 }
-function select(i){
-    index=i;
-    play();
-}
+function select(i){index=i;play();}
 
-/* EVENTS */
+/* ===== EVENTS ===== */
 video.addEventListener('playing',()=>loading.classList.add('hidden'));
 setTimeout(()=>loading.classList.add('hidden'),8000);
 
-/* REMOTE */
+/* ===== REMOTE ===== */
 document.addEventListener('keydown',e=>{
     if(e.key==='ArrowRight')select((index+1)%channels.length);
     if(e.key==='ArrowLeft')select((index-1+channels.length)%channels.length);
     if(e.key==='ArrowUp')showOverlay();
 });
 
-/* TOUCH + MOUSE */
+/* ===== TOUCH + MOUSE ===== */
 let startY=0;
 document.addEventListener('touchstart',e=>{
     startY=e.touches[0].clientY;
 },{passive:true});
+
 document.addEventListener('touchmove',e=>{
     if(startY>window.innerHeight-120 && startY-e.touches[0].clientY>40){
         showOverlay();
     }
 },{passive:true});
+
 document.addEventListener('touchend',()=>showOverlay());
 document.addEventListener('mousemove',()=>showOverlay());
+
+/* ===== EXIT CLEAN ===== */
+window.addEventListener('beforeunload',()=>{
+    cleanupPlayer();
+    localStorage.clear();
+});
 </script>
 
 </body>
