@@ -9,131 +9,123 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{
-    width:100%;
-    height:100%;
+body{
     background:#000;
+    color:#fff;
     font-family:Segoe UI,Tahoma,sans-serif;
     overflow:hidden;
-    color:#fff;
-}
-
-/* ===== VIDEO ===== */
-video{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    background:#000;
 }
 
 /* ===== LOADING ===== */
 #loading{
     position:fixed;
     inset:0;
-    background:#0b0b0b;
+    background:#000;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-    z-index:1000;
+    z-index:999;
     transition:.4s;
 }
-#loading.hide{opacity:0;pointer-events:none}
+#loading.hidden{opacity:0;pointer-events:none}
 .loader{
-    width:50px;height:50px;
-    border:3px solid rgba(255,111,0,.3);
-    border-top-color:#ff6f00;
+    width:48px;height:48px;
+    border:3px solid rgba(255,140,0,.3);
+    border-top-color:#ff8c00;
     border-radius:50%;
     animation:spin 1s linear infinite;
-    margin-bottom:18px;
+    margin-bottom:15px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== VIDEO ===== */
+video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    background:#000;
+}
 
 /* ===== CHANNEL INFO ===== */
 #info{
     position:fixed;
-    top:20px;right:20px;
-    background:rgba(0,0,0,.65);
+    top:20px;
+    right:20px;
+    background:rgba(0,0,0,.7);
     backdrop-filter:blur(10px);
-    padding:12px 20px;
-    border-radius:14px;
+    padding:12px 18px;
+    border-radius:12px;
     display:flex;
     align-items:center;
-    gap:15px;
+    gap:12px;
+    z-index:50;
     opacity:0;
     transition:.3s;
-    z-index:20;
 }
 #info.show{opacity:1}
-#info img{width:46px;height:46px;object-fit:contain}
-#info span{color:#ff6f00;font-size:18px;font-weight:600}
+#info img{width:42px;height:42px;object-fit:contain}
+#info span{color:#ff8c00;font-weight:600}
 
 /* ===== CHANNEL BAR ===== */
 #channels{
     position:fixed;
-    bottom:0;left:0;
+    bottom:0;
+    left:0;
     width:100%;
-    padding:14px 14px;
-    background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
     display:flex;
-    gap:14px;
+    gap:10px;
+    padding:14px;
+    background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
     overflow-x:auto;
-    scrollbar-width:none;
     transform:translateY(100%);
-    transition:.35s ease;
-    z-index:15;
+    transition:.35s;
+    z-index:40;
 }
 #channels.show{transform:translateY(0)}
 #channels::-webkit-scrollbar{display:none}
 
 .channel{
+    width:120px;
     flex:0 0 auto;
-    width:130px;
-    padding:10px;
-    border-radius:16px;
     background:rgba(255,255,255,.08);
+    border-radius:12px;
+    padding:8px;
     text-align:center;
     cursor:pointer;
-    transition:.25s;
+    transition:.3s;
     border:2px solid transparent;
+}
+.channel.active{
+    border-color:#ff8c00;
+    background:rgba(255,140,0,.25);
 }
 .channel img{
     width:100%;
-    height:64px;
+    height:60px;
     object-fit:contain;
     margin-bottom:6px;
 }
-.channel span{
-    font-size:13px;
+.channel div{
+    font-size:12px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-}
-.channel.active{
-    background:rgba(255,111,0,.25);
-    border-color:#ff6f00;
-    transform:scale(1.08);
-}
-
-/* ===== BLUR WHEN MENU ===== */
-body.menu video{
-    filter:blur(2px) brightness(.85);
 }
 
 /* ===== HINT ===== */
 #hint{
     position:fixed;
-    bottom:90px;
+    bottom:120px;
     left:50%;
     transform:translateX(-50%);
-    background:rgba(0,0,0,.65);
-    padding:8px 18px;
-    border-radius:22px;
+    background:rgba(0,0,0,.7);
+    padding:8px 16px;
+    border-radius:20px;
     font-size:14px;
     opacity:0;
     transition:.3s;
+    z-index:60;
 }
 #hint.show{opacity:1}
 </style>
@@ -141,188 +133,126 @@ body.menu video{
 
 <body>
 
-<!-- Loading -->
+<!-- LOADING -->
 <div id="loading">
     <div class="loader"></div>
-    <div style="color:#ff6f00;font-size:22px">ElAhmad TV</div>
-    <div style="opacity:.6;margin-top:6px">جاري تحميل القنوات…</div>
+    <div style="color:#ff8c00;font-size:22px">ElAhmad TV</div>
+    <div style="opacity:.7;margin-top:6px">جاري تحميل القنوات...</div>
 </div>
 
-<video id="video" autoplay playsinline></video>
+<video id="video" playsinline></video>
 
-<!-- Channel Info -->
+<!-- INFO -->
 <div id="info">
     <img id="infoLogo">
     <span id="infoName"></span>
 </div>
 
-<!-- Channels -->
+<!-- CHANNELS -->
 <div id="channels"></div>
 
-<div id="hint">⬅️ ➡️ تغيير القناة | ⬆️ القائمة</div>
+<!-- HINT -->
+<div id="hint">⬆️ القائمة | ⬅️ ➡️ تغيير القناة</div>
 
 <script>
-const video=document.getElementById('video');
-const loading=document.getElementById('loading');
-const channelsBox=document.getElementById('channels');
-const info=document.getElementById('info');
-const infoLogo=document.getElementById('infoLogo');
-const infoName=document.getElementById('infoName');
-const hint=document.getElementById('hint');
+const video = document.getElementById('video');
+const loading = document.getElementById('loading');
+const channelsBox = document.getElementById('channels');
+const info = document.getElementById('info');
+const infoLogo = document.getElementById('infoLogo');
+const infoName = document.getElementById('infoName');
+const hint = document.getElementById('hint');
 
-let channels=[],current=0,hls=null;
-let infoTimer=null,menuTimer=null,exitArmed=false;
-const STORE_KEY='elahmad_last_channel';
+let channels=[], index=0, hls=null;
+let hideTimer;
 
 /* ===== LOAD CHANNELS ===== */
 fetch('channels.json')
 .then(r=>r.json())
-.then(data=>{
-    channels=data.channels||[];
-    const saved=localStorage.getItem(STORE_KEY);
-    if(saved && channels[saved]) current=parseInt(saved);
+.then(d=>{
+    channels=d.channels||[];
     buildChannels();
-    playChannel();
-    loading.classList.add('hide');
+    index=parseInt(localStorage.getItem('last'))||0;
+    play();
 });
 
 /* ===== BUILD UI ===== */
 function buildChannels(){
     channelsBox.innerHTML='';
     channels.forEach((c,i)=>{
-        const d=document.createElement('div');
-        d.className='channel';
-        d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-        d.onclick=()=>selectChannel(i);
-        channelsBox.appendChild(d);
+        const el=document.createElement('div');
+        el.className='channel';
+        el.innerHTML=`<img src="${c.logo}"><div>${c.name}</div>`;
+        el.onclick=()=>select(i);
+        channelsBox.appendChild(el);
     });
-    updateActive();
 }
 
 /* ===== PLAY ===== */
-function playChannel(){
+function play(){
     if(hls){hls.destroy();hls=null}
-    const ch=channels[current];
-    localStorage.setItem(STORE_KEY,current);
+    const c=channels[index];
+    localStorage.setItem('last',index);
 
-    infoLogo.src=ch.logo;
-    infoName.textContent=ch.name;
-    info.classList.add('show');
-    clearTimeout(infoTimer);
-    infoTimer=setTimeout(()=>info.classList.remove('show'),3000);
+    document.querySelectorAll('.channel').forEach((e,i)=>{
+        e.classList.toggle('active',i===index);
+    });
+
+    infoLogo.src=c.logo;
+    infoName.textContent=c.name;
+    showInfo();
 
     if(Hls.isSupported()){
-        hls=new Hls({
-            enableWorker:true,
-            lowLatencyMode:true,
-            backBufferLength:90,
-            maxBufferLength:30
-        });
-        hls.loadSource(ch.stream);
+        hls=new Hls({lowLatencyMode:true});
+        hls.loadSource(c.stream);
         hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED,()=>video.play().catch(()=>{}));
     }else{
-        video.src=ch.stream;
+        video.src=c.stream;
+        video.play().catch(()=>{});
     }
-    updateActive();
 }
 
-/* ===== ACTIVE ===== */
-function updateActive(){
-    [...channelsBox.children].forEach((c,i)=>{
-        c.classList.toggle('active',i===current);
-        if(i===current){
-            c.scrollIntoView({behavior:'smooth',inline:'center'});
-        }
-    });
+/* ===== UI HELPERS ===== */
+function showInfo(){
+    info.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer=setTimeout(()=>info.classList.remove('show'),3000);
 }
-
-/* ===== SELECT ===== */
-function selectChannel(i){
-    current=i;
-    playChannel();
+function showMenu(){
+    channelsBox.classList.add('show');
+    clearTimeout(hideTimer);
+    hideTimer=setTimeout(()=>channelsBox.classList.remove('show'),5000);
+}
+function select(i){
+    index=i;
+    play();
     showMenu();
 }
 
-/* ===== MENU ===== */
-function showMenu(){
-    channelsBox.classList.add('show');
-    document.body.classList.add('menu');
-    hint.classList.add('show');
-    clearTimeout(menuTimer);
-    menuTimer=setTimeout(hideMenu,5000);
-}
-function hideMenu(){
-    channelsBox.classList.remove('show');
-    document.body.classList.remove('menu');
-    hint.classList.remove('show');
-}
+/* ===== LOADING FIX ===== */
+video.addEventListener('playing',()=>loading.classList.add('hidden'));
+setTimeout(()=>loading.classList.add('hidden'),8000);
 
-/* ===== KEYS ===== */
+/* ===== REMOTE ===== */
 document.addEventListener('keydown',e=>{
-    e.preventDefault();
-    if(e.key==='ArrowRight'){current=(current+1)%channels.length;playChannel()}
-    if(e.key==='ArrowLeft'){current=(current-1+channels.length)%channels.length;playChannel()}
-    if(e.key==='ArrowUp'){showMenu()}
-    if(e.key==='Escape'){
-        if(!exitArmed){
-            exitArmed=true;
-            hint.textContent='اضغط مرة أخرى للخروج';
-            hint.classList.add('show');
-            setTimeout(()=>{
-                exitArmed=false;
-                hint.textContent='⬅️ ➡️ تغيير القناة | ⬆️ القائمة';
-            },2000);
-        }else{
-            if(hls){hls.destroy();hls=null}
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
-            window.close();
-        }
-    }
+    if(e.key==='ArrowRight') select((index+1)%channels.length);
+    if(e.key==='ArrowLeft') select((index-1+channels.length)%channels.length);
+    if(e.key==='ArrowUp') showMenu();
 });
 
 /* ===== TOUCH ===== */
-<script>
-/* ===== TOUCH + TAP SUPPORT (PHONE + ANDROID TV) ===== */
-let touchStartY = 0;
-let lastTap = 0;
-
-/* Tap anywhere = show menu */
-document.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTap < 300) return; // منع التكرار
-    lastTap = now;
-    showMenu();
-});
-
-/* Swipe up from bottom = show menu */
-document.addEventListener('touchstart', e => {
-    touchStartY = e.touches[0].clientY;
+let startY=0;
+document.addEventListener('touchstart',e=>{
+    startY=e.touches[0].clientY;
 },{passive:true});
-
-document.addEventListener('touchmove', e => {
-    const y = e.touches[0].clientY;
-    const diff = touchStartY - y;
-
-    if (touchStartY > window.innerHeight - 120 && diff > 40) {
+document.addEventListener('touchmove',e=>{
+    if(startY>window.innerHeight-120 && startY-e.touches[0].clientY>40){
         showMenu();
     }
 },{passive:true});
-
-/* Mouse move (TV browser / PC) */
-document.addEventListener('mousemove', () => {
-    showMenu();
-});
-</script>
-/* ===== MEMORY CLEAN ===== */
-setInterval(()=>{
-    if(video.buffered.length){
-        const c=video.currentTime;
-        const e=video.buffered.end(0);
-        if(e-c>40) video.currentTime=c;
-    }
-},30000);
+document.addEventListener('touchend',()=>showMenu());
+document.addEventListener('mousemove',()=>showMenu());
 </script>
 
 </body>
