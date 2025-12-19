@@ -4,20 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ElAhmad TV</title>
+
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{
-    font-family:Segoe UI,Tahoma,sans-serif;
+html,body{
+    width:100%;
+    height:100%;
     background:#000;
-    color:#fff;
+    font-family:Segoe UI,Tahoma,sans-serif;
     overflow:hidden;
-    height:100vh;
+    color:#fff;
 }
 
-/* ===== Video ===== */
-#video{
+/* ===== VIDEO ===== */
+video{
     position:fixed;
     inset:0;
     width:100%;
@@ -26,71 +28,72 @@ body{
     background:#000;
 }
 
-/* ===== Loading ===== */
+/* ===== LOADING ===== */
 #loading{
     position:fixed;
     inset:0;
-    background:#0a0a0a;
+    background:#0b0b0b;
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
     z-index:1000;
+    transition:.4s;
 }
-#loading.hide{opacity:0;pointer-events:none;transition:.4s}
+#loading.hide{opacity:0;pointer-events:none}
 .loader{
     width:50px;height:50px;
     border:3px solid rgba(255,111,0,.3);
     border-top-color:#ff6f00;
     border-radius:50%;
     animation:spin 1s linear infinite;
-    margin-bottom:20px;
+    margin-bottom:18px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== Channel Info ===== */
-#channelInfo{
+/* ===== CHANNEL INFO ===== */
+#info{
     position:fixed;
     top:20px;right:20px;
-    background:rgba(0,0,0,.7);
+    background:rgba(0,0,0,.65);
     backdrop-filter:blur(10px);
     padding:12px 20px;
     border-radius:14px;
     display:flex;
     align-items:center;
     gap:15px;
-    z-index:50;
     opacity:0;
     transition:.3s;
+    z-index:20;
 }
-#channelInfo.show{opacity:1}
-#channelInfo img{width:46px;height:46px;object-fit:contain}
-#channelInfo span{color:#ff6f00;font-size:18px;font-weight:600}
+#info.show{opacity:1}
+#info img{width:46px;height:46px;object-fit:contain}
+#info span{color:#ff6f00;font-size:18px;font-weight:600}
 
-/* ===== Channels Bar ===== */
+/* ===== CHANNEL BAR ===== */
 #channels{
     position:fixed;
     bottom:0;left:0;
     width:100%;
-    padding:14px 12px;
+    padding:14px 14px;
     background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
     display:flex;
-    gap:12px;
+    gap:14px;
     overflow-x:auto;
     scrollbar-width:none;
     transform:translateY(100%);
     transition:.35s ease;
-    z-index:40;
+    z-index:15;
 }
 #channels.show{transform:translateY(0)}
 #channels::-webkit-scrollbar{display:none}
 
 .channel{
     flex:0 0 auto;
-    width:115px;
+    width:130px;
     padding:10px;
+    border-radius:16px;
     background:rgba(255,255,255,.08);
-    border-radius:14px;
     text-align:center;
     cursor:pointer;
     transition:.25s;
@@ -98,12 +101,12 @@ body{
 }
 .channel img{
     width:100%;
-    height:60px;
+    height:64px;
     object-fit:contain;
     margin-bottom:6px;
 }
 .channel span{
-    font-size:12px;
+    font-size:13px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -113,19 +116,21 @@ body{
     border-color:#ff6f00;
     transform:scale(1.08);
 }
-body.menu-open #video{
+
+/* ===== BLUR WHEN MENU ===== */
+body.menu video{
     filter:blur(2px) brightness(.85);
 }
 
-/* ===== Hint ===== */
+/* ===== HINT ===== */
 #hint{
     position:fixed;
     bottom:90px;
     left:50%;
     transform:translateX(-50%);
-    background:rgba(0,0,0,.7);
-    padding:8px 16px;
-    border-radius:20px;
+    background:rgba(0,0,0,.65);
+    padding:8px 18px;
+    border-radius:22px;
     font-size:14px;
     opacity:0;
     transition:.3s;
@@ -136,83 +141,81 @@ body.menu-open #video{
 
 <body>
 
+<!-- Loading -->
 <div id="loading">
     <div class="loader"></div>
     <div style="color:#ff6f00;font-size:22px">ElAhmad TV</div>
+    <div style="opacity:.6;margin-top:6px">جاري تحميل القنوات…</div>
 </div>
 
 <video id="video" autoplay playsinline></video>
 
-<div id="channelInfo">
+<!-- Channel Info -->
+<div id="info">
     <img id="infoLogo">
     <span id="infoName"></span>
 </div>
 
+<!-- Channels -->
 <div id="channels"></div>
+
 <div id="hint">⬅️ ➡️ تغيير القناة | ⬆️ القائمة</div>
 
 <script>
-const video = document.getElementById('video');
-const loading = document.getElementById('loading');
-const channelsBar = document.getElementById('channels');
-const info = document.getElementById('channelInfo');
-const infoLogo = document.getElementById('infoLogo');
-const infoName = document.getElementById('infoName');
-const hint = document.getElementById('hint');
+const video=document.getElementById('video');
+const loading=document.getElementById('loading');
+const channelsBox=document.getElementById('channels');
+const info=document.getElementById('info');
+const infoLogo=document.getElementById('infoLogo');
+const infoName=document.getElementById('infoName');
+const hint=document.getElementById('hint');
 
-let channels=[], index=0, hls=null;
-let hideInfoTimer=null, hideMenuTimer=null;
-let exitArmed=false;
+let channels=[],current=0,hls=null;
+let infoTimer=null,menuTimer=null,exitArmed=false;
+const STORE_KEY='elahmad_last_channel';
 
-const STORAGE_LAST='elahmad_last';
-
-/* ===== Load ===== */
-fetch('channels.json').then(r=>r.json()).then(d=>{
-    channels=d.channels||[];
-    const saved=localStorage.getItem(STORAGE_LAST);
-    if(saved && channels[saved]) index=parseInt(saved);
-    renderChannels();
-    play();
+/* ===== LOAD CHANNELS ===== */
+fetch('channels.json')
+.then(r=>r.json())
+.then(data=>{
+    channels=data.channels||[];
+    const saved=localStorage.getItem(STORE_KEY);
+    if(saved && channels[saved]) current=parseInt(saved);
+    buildChannels();
+    playChannel();
     loading.classList.add('hide');
 });
 
-/* ===== Render Channels ===== */
-function renderChannels(){
-    channelsBar.innerHTML='';
+/* ===== BUILD UI ===== */
+function buildChannels(){
+    channelsBox.innerHTML='';
     channels.forEach((c,i)=>{
-        const el=document.createElement('div');
-        el.className='channel';
-        el.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
-        el.onclick=()=>select(i);
-        channelsBar.appendChild(el);
+        const d=document.createElement('div');
+        d.className='channel';
+        d.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+        d.onclick=()=>selectChannel(i);
+        channelsBox.appendChild(d);
     });
     updateActive();
 }
 
-/* ===== Select ===== */
-function select(i){
-    index=i;
-    play();
-    showMenu();
-}
-
-/* ===== Play ===== */
-function play(){
+/* ===== PLAY ===== */
+function playChannel(){
     if(hls){hls.destroy();hls=null}
-    const ch=channels[index];
-    localStorage.setItem(STORAGE_LAST,index);
-    updateActive();
+    const ch=channels[current];
+    localStorage.setItem(STORE_KEY,current);
+
     infoLogo.src=ch.logo;
     infoName.textContent=ch.name;
     info.classList.add('show');
-    clearTimeout(hideInfoTimer);
-    hideInfoTimer=setTimeout(()=>info.classList.remove('show'),3000);
+    clearTimeout(infoTimer);
+    infoTimer=setTimeout(()=>info.classList.remove('show'),3000);
 
     if(Hls.isSupported()){
         hls=new Hls({
             enableWorker:true,
             lowLatencyMode:true,
-            backBufferLength:120,
+            backBufferLength:90,
             maxBufferLength:30
         });
         hls.loadSource(ch.stream);
@@ -220,44 +223,55 @@ function play(){
     }else{
         video.src=ch.stream;
     }
+    updateActive();
 }
 
-/* ===== Active ===== */
+/* ===== ACTIVE ===== */
 function updateActive(){
-    [...channelsBar.children].forEach((c,i)=>{
-        c.classList.toggle('active',i===index);
-        if(i===index){
+    [...channelsBox.children].forEach((c,i)=>{
+        c.classList.toggle('active',i===current);
+        if(i===current){
             c.scrollIntoView({behavior:'smooth',inline:'center'});
         }
     });
 }
 
-/* ===== Menu ===== */
+/* ===== SELECT ===== */
+function selectChannel(i){
+    current=i;
+    playChannel();
+    showMenu();
+}
+
+/* ===== MENU ===== */
 function showMenu(){
-    channelsBar.classList.add('show');
-    document.body.classList.add('menu-open');
+    channelsBox.classList.add('show');
+    document.body.classList.add('menu');
     hint.classList.add('show');
-    clearTimeout(hideMenuTimer);
-    hideMenuTimer=setTimeout(hideMenu,5000);
+    clearTimeout(menuTimer);
+    menuTimer=setTimeout(hideMenu,5000);
 }
 function hideMenu(){
-    channelsBar.classList.remove('show');
-    document.body.classList.remove('menu-open');
+    channelsBox.classList.remove('show');
+    document.body.classList.remove('menu');
     hint.classList.remove('show');
 }
 
-/* ===== Keys ===== */
+/* ===== KEYS ===== */
 document.addEventListener('keydown',e=>{
     e.preventDefault();
-    if(e.key==='ArrowRight'){index=(index+1)%channels.length;play()}
-    if(e.key==='ArrowLeft'){index=(index-1+channels.length)%channels.length;play()}
+    if(e.key==='ArrowRight'){current=(current+1)%channels.length;playChannel()}
+    if(e.key==='ArrowLeft'){current=(current-1+channels.length)%channels.length;playChannel()}
     if(e.key==='ArrowUp'){showMenu()}
     if(e.key==='Escape'){
         if(!exitArmed){
             exitArmed=true;
             hint.textContent='اضغط مرة أخرى للخروج';
             hint.classList.add('show');
-            setTimeout(()=>{exitArmed=false;hint.textContent='⬅️ ➡️ تغيير القناة | ⬆️ القائمة'},2000);
+            setTimeout(()=>{
+                exitArmed=false;
+                hint.textContent='⬅️ ➡️ تغيير القناة | ⬆️ القائمة';
+            },2000);
         }else{
             if(hls){hls.destroy();hls=null}
             video.pause();
@@ -268,7 +282,18 @@ document.addEventListener('keydown',e=>{
     }
 });
 
-/* ===== Memory Cleanup ===== */
+/* ===== TOUCH ===== */
+let startX=0;
+document.addEventListener('touchstart',e=>startX=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+    const diff=e.changedTouches[0].clientX-startX;
+    if(Math.abs(diff)>60){
+        current=diff<0?(current+1)%channels.length:(current-1+channels.length)%channels.length;
+        playChannel();
+    }
+});
+
+/* ===== MEMORY CLEAN ===== */
 setInterval(()=>{
     if(video.buffered.length){
         const c=video.currentTime;
