@@ -4,23 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ElAhmad TV</title>
-
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
     background:#000;
-    color:#fff;
-    font-family:Segoe UI,Tahoma,sans-serif;
     overflow:hidden;
+    font-family:Segoe UI,Tahoma,sans-serif;
 }
 
-/* ===== VIDEO ===== */
+/* ===== VIDEO (SAFE FOR NEWS TICKER) ===== */
 video{
     width:100%;
     height:100%;
-    object-fit:cover; /* إصلاح شريط الأخبار واللوغو */
+    object-fit:contain; /* لا نقص */
+    padding-bottom:5vh; /* حماية شريط الأخبار */
     background:#000;
 }
 
@@ -47,11 +46,11 @@ video{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ===== CHANNEL LOGO OVERLAY ===== */
+/* ===== LOGO (LEFT) ===== */
 #logoOverlay{
     position:fixed;
     top:20px;
-    right:20px;
+    left:20px; /* تم النقل لليسار */
     background:rgba(0,0,0,.55);
     backdrop-filter:blur(10px);
     padding:12px;
@@ -86,12 +85,11 @@ video{
 #channels::-webkit-scrollbar{display:none}
 
 .channel{
-    width:118px;
+    width:120px;
     flex:0 0 auto;
     background:rgba(255,255,255,.08);
-    border-radius:12px;
-    padding:8px;
-    text-align:center;
+    border-radius:14px;
+    padding:10px;
     cursor:pointer;
     transition:.25s;
     border:2px solid transparent;
@@ -102,23 +100,23 @@ video{
 }
 .channel img{
     width:100%;
-    height:58px;
+    height:60px;
     object-fit:contain;
 }
 
 /* ===== HINT ===== */
 #hint{
     position:fixed;
-    bottom:120px;
+    bottom:130px;
     left:50%;
     transform:translateX(-50%);
-    background:rgba(0,0,0,.65);
-    padding:8px 16px;
+    background:rgba(0,0,0,.6);
+    padding:8px 18px;
     border-radius:20px;
     font-size:14px;
+    color:#fff;
     opacity:0;
     transition:.3s;
-    z-index:70;
 }
 #hint.show{opacity:1}
 </style>
@@ -126,7 +124,6 @@ video{
 
 <body>
 
-<!-- LOADING -->
 <div id="loading">
     <div class="loader"></div>
     <div style="color:#ff8c00;font-size:22px">ElAhmad TV</div>
@@ -134,7 +131,7 @@ video{
 
 <video id="video" playsinline></video>
 
-<!-- LOGO ONLY -->
+<!-- LOGO LEFT -->
 <div id="logoOverlay">
     <img id="logoImg">
 </div>
@@ -164,7 +161,7 @@ fetch('channels.json')
     play();
 });
 
-/* BUILD */
+/* BUILD CHANNEL BAR */
 function build(){
     channelsBox.innerHTML='';
     channels.forEach((c,i)=>{
@@ -176,7 +173,7 @@ function build(){
     });
 }
 
-/* PLAY */
+/* PLAY CHANNEL */
 function play(){
     if(hls){hls.destroy();hls=null}
     const c=channels[index];
@@ -204,10 +201,13 @@ function play(){
 function showOverlay(){
     logoOverlay.classList.add('show');
     channelsBox.classList.add('show');
+    hint.classList.add('show');
+
     clearTimeout(hideTimer);
     hideTimer=setTimeout(()=>{
         logoOverlay.classList.remove('show');
         channelsBox.classList.remove('show');
+        hint.classList.remove('show');
     },4000);
 }
 function select(i){
@@ -215,7 +215,7 @@ function select(i){
     play();
 }
 
-/* FIX LOADING */
+/* EVENTS */
 video.addEventListener('playing',()=>loading.classList.add('hidden'));
 setTimeout(()=>loading.classList.add('hidden'),8000);
 
@@ -226,7 +226,7 @@ document.addEventListener('keydown',e=>{
     if(e.key==='ArrowUp')showOverlay();
 });
 
-/* TOUCH */
+/* TOUCH + MOUSE */
 let startY=0;
 document.addEventListener('touchstart',e=>{
     startY=e.touches[0].clientY;
