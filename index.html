@@ -1,669 +1,282 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ElAhmad TV - البث المباشر</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElAhmad TV</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #000;
-            color: #fff;
-            overflow: hidden;
-            height: 100vh;
-        }
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    font-family:Segoe UI,Tahoma,sans-serif;
+    background:#000;
+    color:#fff;
+    overflow:hidden;
+    height:100vh;
+}
 
-        /* شاشة التحميل */
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0a0a0a;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.5s;
-        }
+/* ===== Video ===== */
+#video{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    background:#000;
+}
 
-        #loading.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
+/* ===== Loading ===== */
+#loading{
+    position:fixed;
+    inset:0;
+    background:#0a0a0a;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+#loading.hide{opacity:0;pointer-events:none;transition:.4s}
+.loader{
+    width:50px;height:50px;
+    border:3px solid rgba(255,111,0,.3);
+    border-top-color:#ff6f00;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin-bottom:20px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-        .loader {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255, 111, 0, 0.3);
-            border-radius: 50%;
-            border-top-color: #ff6f00;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
+/* ===== Channel Info ===== */
+#channelInfo{
+    position:fixed;
+    top:20px;right:20px;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(10px);
+    padding:12px 20px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    z-index:50;
+    opacity:0;
+    transition:.3s;
+}
+#channelInfo.show{opacity:1}
+#channelInfo img{width:46px;height:46px;object-fit:contain}
+#channelInfo span{color:#ff6f00;font-size:18px;font-weight:600}
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+/* ===== Channels Bar ===== */
+#channels{
+    position:fixed;
+    bottom:0;left:0;
+    width:100%;
+    padding:14px 12px;
+    background:linear-gradient(to top,rgba(0,0,0,.95),transparent);
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    transform:translateY(100%);
+    transition:.35s ease;
+    z-index:40;
+}
+#channels.show{transform:translateY(0)}
+#channels::-webkit-scrollbar{display:none}
 
-        /* مشغل الفيديو */
-        #video-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-        }
+.channel{
+    flex:0 0 auto;
+    width:115px;
+    padding:10px;
+    background:rgba(255,255,255,.08);
+    border-radius:14px;
+    text-align:center;
+    cursor:pointer;
+    transition:.25s;
+    border:2px solid transparent;
+}
+.channel img{
+    width:100%;
+    height:60px;
+    object-fit:contain;
+    margin-bottom:6px;
+}
+.channel span{
+    font-size:12px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.channel.active{
+    background:rgba(255,111,0,.25);
+    border-color:#ff6f00;
+    transform:scale(1.08);
+}
+body.menu-open #video{
+    filter:blur(2px) brightness(.85);
+}
 
-        #video-player {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        /* معلومات القناة الحالية */
-        #channel-info {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 12px 20px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            display: none;
-            align-items: center;
-            gap: 15px;
-            z-index: 100;
-            max-width: 400px;
-        }
-
-        #channel-logo {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-        }
-
-        #channel-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ff6f00;
-        }
-
-        /* قائمة القنوات */
-        #channels-list {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.95), transparent);
-            padding: 15px 10px;
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-            z-index: 50;
-        }
-
-        #channels-list::-webkit-scrollbar {
-            display: none;
-        }
-
-        #channels-list.visible {
-            transform: translateY(0);
-        }
-
-        .channel-item {
-            flex: 0 0 auto;
-            width: 120px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-
-        .channel-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-5px);
-        }
-
-        .channel-item.active {
-            background: rgba(255, 111, 0, 0.2);
-            border-color: #ff6f00;
-            transform: scale(1.05);
-        }
-
-        .channel-logo {
-            width: 100%;
-            height: 60px;
-            object-fit: contain;
-            margin-bottom: 8px;
-            border-radius: 5px;
-        }
-
-        .channel-title {
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: #fff;
-        }
-
-        /* التلميحات */
-        #hint {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 60;
-            white-space: nowrap;
-        }
-
-        #hint.visible {
-            opacity: 1;
-        }
-
-        /* رسائل الخطأ */
-        #error-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: #ff6f00;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            display: none;
-            z-index: 200;
-            max-width: 80%;
-            border: 1px solid #ff6f00;
-        }
-
-        /* زر القائمة */
-        #menu-toggle {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 111, 0, 0.9);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            z-index: 70;
-            font-size: 24px;
-            box-shadow: 0 4px 15px rgba(255, 111, 0, 0.3);
-            transition: all 0.3s;
-        }
-
-        #menu-toggle:hover {
-            transform: scale(1.1);
-            background: rgba(255, 111, 0, 1);
-        }
-
-        /* التجاوب مع الشاشات الصغيرة */
-        @media (max-width: 768px) {
-            .channel-item {
-                width: 100px;
-            }
-            
-            .channel-logo {
-                height: 50px;
-            }
-            
-            #channel-info {
-                right: 10px;
-                top: 10px;
-                padding: 8px 12px;
-            }
-            
-            #channel-name {
-                font-size: 16px;
-            }
-            
-            #menu-toggle {
-                width: 45px;
-                height: 45px;
-                bottom: 15px;
-                left: 15px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .channel-item {
-                width: 90px;
-                padding: 8px;
-            }
-            
-            .channel-logo {
-                height: 40px;
-            }
-            
-            .channel-title {
-                font-size: 11px;
-            }
-            
-            #hint {
-                font-size: 12px;
-                bottom: 80px;
-                padding: 6px 12px;
-            }
-        }
-    </style>
+/* ===== Hint ===== */
+#hint{
+    position:fixed;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,.7);
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:14px;
+    opacity:0;
+    transition:.3s;
+}
+#hint.show{opacity:1}
+</style>
 </head>
+
 <body>
-    <!-- شاشة التحميل -->
-    <div id="loading">
-        <div class="loader"></div>
-        <div style="color: #ff6f00; font-size: 24px; margin-bottom: 10px;">ElAhmad TV</div>
-        <div style="color: #ccc; font-size: 14px;">جاري تحميل القنوات...</div>
-    </div>
 
-    <!-- مشغل الفيديو -->
-    <div id="video-container">
-        <video id="video-player" autoplay playsinline></video>
-    </div>
+<div id="loading">
+    <div class="loader"></div>
+    <div style="color:#ff6f00;font-size:22px">ElAhmad TV</div>
+</div>
 
-    <!-- معلومات القناة الحالية -->
-    <div id="channel-info">
-        <img id="channel-logo" src="" alt="شعار القناة">
-        <div id="channel-name"></div>
-    </div>
+<video id="video" autoplay playsinline></video>
 
-    <!-- قائمة القنوات -->
-    <div id="channels-list"></div>
+<div id="channelInfo">
+    <img id="infoLogo">
+    <span id="infoName"></span>
+</div>
 
-    <!-- تلميحات -->
-    <div id="hint">استخدم ⬅️ ➡️ لتغيير القناة | ⬆️ لإظهار/إخفاء القائمة</div>
+<div id="channels"></div>
+<div id="hint">⬅️ ➡️ تغيير القناة | ⬆️ القائمة</div>
 
-    <!-- رسائل الخطأ -->
-    <div id="error-message"></div>
+<script>
+const video = document.getElementById('video');
+const loading = document.getElementById('loading');
+const channelsBar = document.getElementById('channels');
+const info = document.getElementById('channelInfo');
+const infoLogo = document.getElementById('infoLogo');
+const infoName = document.getElementById('infoName');
+const hint = document.getElementById('hint');
 
-    <!-- زر القائمة -->
-    <div id="menu-toggle">📺</div>
+let channels=[], index=0, hls=null;
+let hideInfoTimer=null, hideMenuTimer=null;
+let exitArmed=false;
 
-    <script>
-        // العناصر الرئيسية
-        const videoPlayer = document.getElementById('video-player');
-        const loadingScreen = document.getElementById('loading');
-        const channelsList = document.getElementById('channels-list');
-        const channelInfo = document.getElementById('channel-info');
-        const channelLogo = document.getElementById('channel-logo');
-        const channelName = document.getElementById('channel-name');
-        const hint = document.getElementById('hint');
-        const errorMessage = document.getElementById('error-message');
-        const menuToggle = document.getElementById('menu-toggle');
+const STORAGE_LAST='elahmad_last';
 
-        // حالة التطبيق
-        let currentState = {
-            channels: [],
-            currentChannelIndex: 0,
-            hlsPlayer: null,
-            isChannelsVisible: false,
-            hintTimer: null,
-            channelsVisibleTimer: null
-        };
+/* ===== Load ===== */
+fetch('channels.json').then(r=>r.json()).then(d=>{
+    channels=d.channels||[];
+    const saved=localStorage.getItem(STORAGE_LAST);
+    if(saved && channels[saved]) index=parseInt(saved);
+    renderChannels();
+    play();
+    loading.classList.add('hide');
+});
 
-        // ثوابت التخزين
-        const STORAGE_KEYS = {
-            LAST_CHANNEL: 'elahmad_last_channel',
-            VOLUME: 'elahmad_volume'
-        };
+/* ===== Render Channels ===== */
+function renderChannels(){
+    channelsBar.innerHTML='';
+    channels.forEach((c,i)=>{
+        const el=document.createElement('div');
+        el.className='channel';
+        el.innerHTML=`<img src="${c.logo}"><span>${c.name}</span>`;
+        el.onclick=()=>select(i);
+        channelsBar.appendChild(el);
+    });
+    updateActive();
+}
 
-        // تهيئة التطبيق
-        async function initApp() {
-            try {
-                // تحميل القنوات
-                const response = await fetch('channels.json');
-                if (!response.ok) throw new Error('فشل تحميل القنوات');
-                
-                const data = await response.json();
-                currentState.channels = data.channels || [];
-                
-                if (currentState.channels.length === 0) {
-                    throw new Error('لا توجد قنوات متاحة');
-                }
-                
-                // تحميل آخر قناة مشاهدة
-                const lastChannel = localStorage.getItem(STORAGE_KEYS.LAST_CHANNEL);
-                if (lastChannel !== null) {
-                    const index = parseInt(lastChannel);
-                    if (index >= 0 && index < currentState.channels.length) {
-                        currentState.currentChannelIndex = index;
-                    }
-                }
-                
-                // تحميل مستوى الصوت
-                const savedVolume = localStorage.getItem(STORAGE_KEYS.VOLUME);
-                if (savedVolume !== null) {
-                    videoPlayer.volume = parseFloat(savedVolume);
-                }
-                
-                // بناء واجهة القنوات
-                buildChannelsList();
-                
-                // تشغيل القناة الحالية
-                playCurrentChannel();
-                
-                // إخفاء شاشة التحميل
-                setTimeout(() => {
-                    loadingScreen.classList.add('hidden');
-                }, 1000);
-                
-            } catch (error) {
-                showError('خطأ في تحميل القنوات: ' + error.message);
-            }
-        }
+/* ===== Select ===== */
+function select(i){
+    index=i;
+    play();
+    showMenu();
+}
 
-        // بناء قائمة القنوات
-        function buildChannelsList() {
-            channelsList.innerHTML = '';
-            
-            currentState.channels.forEach((channel, index) => {
-                const channelElement = document.createElement('div');
-                channelElement.className = 'channel-item';
-                channelElement.dataset.index = index;
-                
-                channelElement.innerHTML = `
-                    <img class="channel-logo" src="${channel.logo}" alt="${channel.name}" 
-                         onerror="this.src='https://via.placeholder.com/100x60/333/fff?text=TV'">
-                    <div class="channel-title">${channel.name}</div>
-                `;
-                
-                channelElement.addEventListener('click', () => {
-                    changeChannel(index);
-                    hideChannelsList();
-                });
-                
-                channelsList.appendChild(channelElement);
-            });
-            
-            updateActiveChannel();
-        }
+/* ===== Play ===== */
+function play(){
+    if(hls){hls.destroy();hls=null}
+    const ch=channels[index];
+    localStorage.setItem(STORAGE_LAST,index);
+    updateActive();
+    infoLogo.src=ch.logo;
+    infoName.textContent=ch.name;
+    info.classList.add('show');
+    clearTimeout(hideInfoTimer);
+    hideInfoTimer=setTimeout(()=>info.classList.remove('show'),3000);
 
-        // تحديث القناة النشطة
-        function updateActiveChannel() {
-            document.querySelectorAll('.channel-item').forEach((item, index) => {
-                item.classList.toggle('active', index === currentState.currentChannelIndex);
-            });
-            
-            // تحديث معلومات القناة الحالية
-            const currentChannel = currentState.channels[currentState.currentChannelIndex];
-            if (currentChannel) {
-                channelLogo.src = currentChannel.logo;
-                channelName.textContent = currentChannel.name;
-                channelInfo.style.display = 'flex';
-                
-                // إظهار معلومات القناة مؤقتاً
-                showTemporaryInfo();
-            }
-        }
-
-        // تشغيل القناة الحالية
-        function playCurrentChannel() {
-            const channel = currentState.channels[currentState.currentChannelIndex];
-            if (!channel) return;
-            
-            // تدمير مشغل HLS السابق إن وجد
-            if (currentState.hlsPlayer) {
-                currentState.hlsPlayer.destroy();
-                currentState.hlsPlayer = null;
-            }
-            
-            // حفظ القناة الحالية
-            localStorage.setItem(STORAGE_KEYS.LAST_CHANNEL, currentState.currentChannelIndex);
-            
-            // تحديث الواجهة
-            updateActiveChannel();
-            
-            // التحقق من دعم HLS
-            if (Hls.isSupported()) {
-                currentState.hlsPlayer = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 90
-                });
-                
-                currentState.hlsPlayer.loadSource(channel.stream);
-                currentState.hlsPlayer.attachMedia(videoPlayer);
-                
-                currentState.hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoPlayer.play().catch(e => {
-                        console.log('تلقائي التشغيل متوقف:', e);
-                    });
-                });
-                
-                currentState.hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                showError('خطأ في الشبكة، جاري إعادة المحاولة...');
-                                setTimeout(() => playCurrentChannel(), 3000);
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                showError('خطأ في الوسائط، جاري الإصلاح...');
-                                currentState.hlsPlayer.recoverMediaError();
-                                break;
-                            default:
-                                showError('خطأ غير متوقع، جاري إعادة التشغيل...');
-                                currentState.hlsPlayer.destroy();
-                                playCurrentChannel();
-                                break;
-                        }
-                    }
-                });
-                
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                // دعم Safari
-                videoPlayer.src = channel.stream;
-                videoPlayer.addEventListener('loadedmetadata', () => {
-                    videoPlayer.play().catch(e => {
-                        console.log('تلقائي التشغيل متوقف:', e);
-                    });
-                });
-            } else {
-                showError('متصفحك لا يدعم تشغيل هذا النوع من البث');
-            }
-        }
-
-        // تغيير القناة
-        function changeChannel(index) {
-            if (index < 0 || index >= currentState.channels.length) return;
-            
-            currentState.currentChannelIndex = index;
-            playCurrentChannel();
-        }
-
-        // إظهار/إخفاء قائمة القنوات
-        function toggleChannelsList() {
-            if (currentState.isChannelsVisible) {
-                hideChannelsList();
-            } else {
-                showChannelsList();
-            }
-        }
-
-        function showChannelsList() {
-            channelsList.classList.add('visible');
-            currentState.isChannelsVisible = true;
-            
-            // إخفاء القائمة تلقائياً بعد 5 ثوان
-            clearTimeout(currentState.channelsVisibleTimer);
-            currentState.channelsVisibleTimer = setTimeout(() => {
-                if (currentState.isChannelsVisible) {
-                    hideChannelsList();
-                }
-            }, 5000);
-        }
-
-        function hideChannelsList() {
-            channelsList.classList.remove('visible');
-            currentState.isChannelsVisible = false;
-            clearTimeout(currentState.channelsVisibleTimer);
-        }
-
-        // إظهار معلومات مؤقتة
-        function showTemporaryInfo() {
-            channelInfo.style.display = 'flex';
-            clearTimeout(currentState.hintTimer);
-            
-            currentState.hintTimer = setTimeout(() => {
-                channelInfo.style.display = 'none';
-            }, 3000);
-        }
-
-        // إظهار تلميح مؤقت
-        function showTemporaryHint(message, duration = 2000) {
-            hint.textContent = message;
-            hint.classList.add('visible');
-            
-            clearTimeout(currentState.hintTimer);
-            currentState.hintTimer = setTimeout(() => {
-                hint.classList.remove('visible');
-            }, duration);
-        }
-
-        // إظهار رسالة خطأ
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 5000);
-        }
-
-        // اختصارات لوحة المفاتيح
-        document.addEventListener('keydown', (e) => {
-            e.preventDefault();
-            
-            switch(e.key) {
-                case 'ArrowRight':
-                    changeChannel(currentState.currentChannelIndex + 1);
-                    showTemporaryHint('القناة التالية');
-                    break;
-                    
-                case 'ArrowLeft':
-                    changeChannel(currentState.currentChannelIndex - 1);
-                    showTemporaryHint('القناة السابقة');
-                    break;
-                    
-                case 'ArrowUp':
-                    toggleChannelsList();
-                    showTemporaryHint(currentState.isChannelsVisible ? 'إخفاء القائمة' : 'إظهار القائمة');
-                    break;
-                    
-                case ' ':
-                    if (videoPlayer.paused) {
-                        videoPlayer.play();
-                        showTemporaryHint('تشغيل');
-                    } else {
-                        videoPlayer.pause();
-                        showTemporaryHint('إيقاف مؤقت');
-                    }
-                    break;
-                    
-                case 'm':
-                    videoPlayer.muted = !videoPlayer.muted;
-                    showTemporaryHint(videoPlayer.muted ? 'كتم الصوت' : 'إعادة الصوت');
-                    break;
-                    
-                case 'Escape':
-                    if (currentState.isChannelsVisible) {
-                        hideChannelsList();
-                    } else {
-                        showTemporaryHint('اضغط مرتين للخروج', 1000);
-                        setTimeout(() => {
-                            // إعادة تعيين الرسالة
-                            hint.textContent = 'استخدم ⬅️ ➡️ لتغيير القناة | ⬆️ لإظهار/إخفاء القائمة';
-                        }, 1000);
-                    }
-                    break;
-            }
+    if(Hls.isSupported()){
+        hls=new Hls({
+            enableWorker:true,
+            lowLatencyMode:true,
+            backBufferLength:120,
+            maxBufferLength:30
         });
+        hls.loadSource(ch.stream);
+        hls.attachMedia(video);
+    }else{
+        video.src=ch.stream;
+    }
+}
 
-                // أحداث اللمس
-        let touchStartX = 0;
-        let touchStartY = 0;
-        
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
-        
-        document.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            
-            const diffX = touchStartX - touchEndX;
-            const diffY = touchStartY - touchEndY;
-            
-            // سواب أفقي لتغيير القناة
-            if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-                if (diffX > 0) {
-                    // سواب لليسار = القناة التالية
-                    changeChannel(currentState.currentChannelIndex + 1);
-                } else {
-                    // سواب لليمين = القناة السابقة
-                    changeChannel(currentState.currentChannelIndex - 1);
-                }
-            }
-            
-            // سواب رأسي من الأسفل لإظهار القائمة
-            if (touchStartY > window.innerHeight - 100 && diffY > 50) {
-                showChannelsList();
-            }
-        });
+/* ===== Active ===== */
+function updateActive(){
+    [...channelsBar.children].forEach((c,i)=>{
+        c.classList.toggle('active',i===index);
+        if(i===index){
+            c.scrollIntoView({behavior:'smooth',inline:'center'});
+        }
+    });
+}
 
-        // أحداث الماوس
-        document.addEventListener('mousemove', () => {
-            showTemporaryInfo();
-        });
+/* ===== Menu ===== */
+function showMenu(){
+    channelsBar.classList.add('show');
+    document.body.classList.add('menu-open');
+    hint.classList.add('show');
+    clearTimeout(hideMenuTimer);
+    hideMenuTimer=setTimeout(hideMenu,5000);
+}
+function hideMenu(){
+    channelsBar.classList.remove('show');
+    document.body.classList.remove('menu-open');
+    hint.classList.remove('show');
+}
 
-        // حفظ مستوى الصوت عند التغيير
-        videoPlayer.addEventListener('volumechange', () => {
-            localStorage.setItem(STORAGE_KEYS.VOLUME, videoPlayer.volume);
-        });
+/* ===== Keys ===== */
+document.addEventListener('keydown',e=>{
+    e.preventDefault();
+    if(e.key==='ArrowRight'){index=(index+1)%channels.length;play()}
+    if(e.key==='ArrowLeft'){index=(index-1+channels.length)%channels.length;play()}
+    if(e.key==='ArrowUp'){showMenu()}
+    if(e.key==='Escape'){
+        if(!exitArmed){
+            exitArmed=true;
+            hint.textContent='اضغط مرة أخرى للخروج';
+            hint.classList.add('show');
+            setTimeout(()=>{exitArmed=false;hint.textContent='⬅️ ➡️ تغيير القناة | ⬆️ القائمة'},2000);
+        }else{
+            if(hls){hls.destroy();hls=null}
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            window.close();
+        }
+    }
+});
 
-        // زر القائمة
-        menuToggle.addEventListener('click', toggleChannelsList);
+/* ===== Memory Cleanup ===== */
+setInterval(()=>{
+    if(video.buffered.length){
+        const c=video.currentTime;
+        const e=video.buffered.end(0);
+        if(e-c>40) video.currentTime=c;
+    }
+},30000);
+</script>
 
-        // بدء التطبيق
-        document.addEventListener('DOMContentLoaded', initApp);
-
-        // التعامل مع انقطاع الإنترنت
-        window.addEventListener('online', () => {
-            showTemporaryHint('تم استعادة الاتصال بالإنترنت');
-        });
-        
-        window.addEventListener('offline', () => {
-            showError('انقطع الاتصال بالإنترنت');
-        });
-    </script>
 </body>
 </html>
